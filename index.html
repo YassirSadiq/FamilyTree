@@ -768,7 +768,7 @@ function fbDB(){
 (async()=>{let t=null;const tm=setTimeout(()=>{if(!loaded){loaded=true;if(!col){demo=true;P=seedP()}render()}},10000);
  try{t=fbDB()}catch(e){}
  if(!t){demo=true;P=seedP();loaded=true;clearTimeout(tm);render();toast("وضع التجربة: البيانات للعرض فقط ولا تُحفظ");return}
- DB=t;col=t.collection("people");try{DB.doc("meta/log").onSnapshot(s=>{try{const v=(s&&typeof s.data==="function"?s.data():s)||{};if(Array.isArray(v.items)&&v.items.length>NL.length)NL=v.items}catch(e){}},()=>{})}catch(e){}try{DB.doc("meta/family").onSnapshot(s=>{try{M=(s&&typeof s.data==="function"?s.data():s)||{}}catch(e){M={}}render()},()=>{})}catch(e){}
+ DB=t;col=t.collection("fam/wtlgyizumqt0nfdpimwzs6ta/people");try{DB.doc("meta/log").onSnapshot(s=>{try{const v=(s&&typeof s.data==="function"?s.data():s)||{};if(Array.isArray(v.items)&&v.items.length>NL.length)NL=v.items}catch(e){}},()=>{})}catch(e){}try{DB.doc("meta/family").onSnapshot(s=>{try{M=(s&&typeof s.data==="function"?s.data():s)||{}}catch(e){M={}}render()},()=>{})}catch(e){}
  col.onSnapshot(s=>{P={};s.docs.forEach(u=>{const a=u.data();if(a)P[u.id]={...mk({}),...a,code:u.id,spouses:Array.isArray(a.spouses)?a.spouses:a.spouse?[a.spouse]:[],milk:Array.isArray(a.milk)?a.milk:[],div:Array.isArray(a.div)?a.div:[],addr:a.addr||{}}});loaded=true;clearTimeout(tm);if(sel&&!P[sel])sel=null;render()},e=>{loaded=true;$("main").innerHTML='<div id="ms">تعذر التحميل</div>'});
 })();
 
