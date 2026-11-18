@@ -3,6 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbf8ec">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="شجرة العائلة">
+<script>
+/* أيقونة + manifest مولّدان داخلياً حتى يمكن تثبيت الموقع كتطبيق بشاشة كاملة */
+(function(){try{
+ var mk=function(n){var c=document.createElement("canvas");c.width=c.height=n;var x=c.getContext("2d"),k=n/40;
+  x.fillStyle="#fbf8ec";x.fillRect(0,0,n,n);x.fillStyle="#8a5a2b";x.fillRect(18*k,22*k,4*k,13*k);
+  x.fillStyle="#2f9e57";x.beginPath();x.arc(20*k,14*k,9*k,0,7);x.fill();
+  x.fillStyle="#3fb86a";x.beginPath();x.arc(12*k,20*k,6.5*k,0,7);x.fill();x.beginPath();x.arc(28*k,20*k,6.5*k,0,7);x.fill();
+  return c.toDataURL("image/png")};
+ var i192=mk(192),i512=mk(512);
+ var l=document.createElement("link");l.rel="apple-touch-icon";l.href=i192;document.head.appendChild(l);
+ var m={name:"شجرة العائلة",short_name:"شجرة العائلة",lang:"ar",dir:"rtl",start_url:location.href.split("#")[0],scope:location.href.split("#")[0].replace(/[^\/]*$/,""),display:"standalone",display_override:["fullscreen","standalone"],background_color:"#fbf8ec",theme_color:"#fbf8ec",icons:[{src:i192,sizes:"192x192",type:"image/png"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any"}]};
+ var a=document.createElement("link");a.rel="manifest";a.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));document.head.appendChild(a);
+}catch(e){}})();
+</script>
 <title>شجرة العائلة</title>
 
 <style>
@@ -253,11 +272,15 @@ html body.sh-pill .nd .nm{text-align:center}
 let demo=false,P={},col=null,tab="tree",sel=null,zoom=1,dir="down",loaded=false,rid=0;
 try{dir=localStorage.getItem("dir")||"down"}catch(e){}
 const $=id=>document.getElementById(id);
+/* ذاكرة مؤقتة لحسابات الرضاعة (تُفرَّغ مع كل رسم أو تعديل) — سبب التعليق الأساسي كان إعادة الحساب مئات المرات */
+const MCH={P:null,st:0,m:[new Map(),new Map()]};
+const mcBump=()=>{MCH.m=[new Map(),new Map()]};
+const mcGet=(ns,key,fn)=>{if(MCH.P!==P){MCH.P=P;mcBump()}const m=MCH.m[MCH.st];let c=m.get(ns);if(!c)m.set(ns,c=new Map());if(c.has(key))return c.get(key);const v=fn();c.set(key,v);return v};
 const E=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const AL="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const gen=()=>{let u;do u=Array.from({length:3},()=>AL[Math.random()*32|0]).join("");while(P[u]);return u};
 const mk=o=>({name:"",milk:[],sex:"M",father:"",mother:"",spouses:[],dead:false,year:0,birth:"",death:"",tier:0,ord:0,lc:"",lt:"",addr:{},div:[],t:Date.now(),...o});
-const put0=(c,d,q)=>{d={...d};delete d.code;delete d.masked;if(d.rn!==undefined){d.name=d.rn;delete d.rn}if(!col){P[c]={...mk({}),...d,code:c};if(RAW&&RAW!==P)RAW[c]={...mk({}),...d,code:c};render();return Promise.resolve()}const r=col.doc(c).set(d);if(!q){const o0=P[c],isNew=!o0,df=o0?fldDiff(o0,d):"";Promise.resolve(r).then(()=>logn(isNew?"add":"edit",d.name,c,df)).catch(()=>{})}return r};
+const put0=(c,d,q)=>{mcBump();d={...d};delete d.code;delete d.masked;if(d.rn!==undefined){d.name=d.rn;delete d.rn}if(!col){P[c]={...mk({}),...d,code:c};if(RAW&&RAW!==P)RAW[c]={...mk({}),...d,code:c};render();return Promise.resolve()}const r=col.doc(c).set(d);if(!q){const o0=P[c],isNew=!o0,df=o0?fldDiff(o0,d):"";Promise.resolve(r).then(()=>logn(isNew?"add":"edit",d.name,c,df)).catch(()=>{})}return r};
 /* ===== تراجع عن آخر عملية ===== */
 const UJ=[];let UP=0,UT=0,KEEP=null;
 function jrn(c){const now=Date.now();if(!UJ.length||(UP===0&&now-UT>1500)){const m=new Map();m.ve=egoOf;UJ.push(m)}const g=UJ[UJ.length-1],o=(RAW&&RAW[c])||P[c];if(!g.has(c))g.set(c,o?JSON.parse(JSON.stringify(o)):null);while(UJ.length>20)UJ.shift();ubtn()}
@@ -298,45 +321,18 @@ function treeHTML(){
   nd+=`<div data-i="${E(badge(p))}" class="nd ${p.sex}${sel===o.c?" sel":""}${p.dead?" dd":""}${tr?" t"+tr:""}" style="left:${q.l}px;top:${q.t}px" onclick="person('${o.c}')">${tr?'<span class="cr">👑</span>':""}<span class="dt" onclick="event.stopPropagation();cardMenu('${o.c}')">⋮</span><div class="nm"><span class="ui">${I.user}<small>${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</small></span><b style="font-size:${nmFs(p.name,[16,18,20][tr]||16)}px">${E(p.name)}${sps?` <small class="sp2">💍 ${E(sps)}</small>`:""}${p.dead?`<small class="sp">${fm?"متوفاة":"متوفى"}</small>`:""}</b></div><div class="bl"><span class="bt" onclick="event.stopPropagation();person('${o.c}')">${I.eye} عرض</span><span class="bt" onclick="event.stopPropagation();addMenu('${o.c}')">＋ إضافة</span><span class="bt" onclick="event.stopPropagation();edit('${o.c}')">✎ تعديل</span></div></div>`});
  return{h:`<div id="tc" style="width:${W*zoom}px;height:${H*zoom}px"><div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform:scale(${zoom});transform-origin:0 0"><svg width="${W}" height="${H}">${sv}</svg>${nd}</div></div>`,W,H}
 }
-function render(){
- $("cn").textContent=Object.keys(P).length+" من 5000 فرد";
- document.querySelectorAll("#nav .tb button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
- const m=$("main");
- if(!col&&loaded&&!demo){m.innerHTML='<div id="ms">سجّل دخولك لعرض الشجرة.</div>';return}
- if(!loaded){m.innerHTML='<div id="ms">جاري التحميل…</div>';return}
- if(tab==="tree"){
-  if(!Object.keys(P).length){m.innerHTML='<div id="ms">لا يوجد أفراد بعد.<br><br><button class="btn" style="max-width:240px" onclick="addRoot()">إضافة أول فرد</button></div>';return}
-  const t=tmode==="ego"?egoHTML():treeHTML();m.innerHTML=`<div id="tw">${t.h}</div><div id="zb"><button onclick="zm(.15)">＋<br>تكبير</button><button onclick="zm(-.15)">－<br>تصغير</button><button onclick="fit(${t.W})">⛶<br>ملاءمة</button><button id="ubk" onclick="undoLast()"${UJ.length?"":" disabled"}>↩<br>تراجع</button></div>`;
-  const w=$("tw");w.scrollLeft=Math.max(0,(w.scrollWidth-w.clientWidth)/2)}
-}
+
 document.querySelectorAll("#nav .tb button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
 $("bs").onclick=()=>{sheet('<h2>بحث<button class="ic" onclick="cl()">✕</button></h2><input id="q" placeholder="ابحث بالاسم…" oninput="sr(this.value)"><div id="rs"></div>');sr("")};
 function sr(v){$("rs").innerHTML=Object.values(P).filter(p=>p.name.includes(v.trim())).slice(0,30).map(p=>`<div class="li" onclick="person('${p.code}')"><span>${E(full(p.code))}</span><span class="mu">#${p.code}</span></div>`).join("")||'<div class="mu" style="padding:12px">لا نتائج</div>'}
-function zm(d){zoom=Math.min(2,Math.max(.3,zoom+d));render()}
-function fit(W){const w=$("tw");zoom=Math.min(1,Math.max(.3,w.clientWidth/W));render()}
+
 function share(){const u=location.href;try{navigator.share?navigator.share({url:u,title:"شجرة العائلة"}):navigator.clipboard.writeText(u).then(()=>toast("تم نسخ الرابط"))}catch(e){toast("تعذر المشاركة")}}
-function person(c){sel=c;const p=P[c];if(!p)return;
- sheet(`<h2>معلومات الفرد<button class="ic" onclick="cl()">✕</button></h2><div class="cd"><b style="font-size:18px">${E(p.name)}</b><div style="margin-top:6px"><span class="bg ${p.dead?"dead":"alive"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):"حي"}</span><span class="bg sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="mu">#${c}</span></div><div class="mu" style="margin-top:8px">الاسم الكامل</div><div>${E(full(c))}</div>${p.birth?`<div class="mu" style="margin-top:6px">الميلاد: ${E(p.birth)}</div>`:""}</div>
- <div class="row"><button class="btn" onclick="addKids('${c}')">+ إضافة أبناء</button><button class="btn o" onclick="addSp('${c}')">إضافة زوج/ة</button></div>
- <div class="row"><button class="btn o" onclick="edit('${c}')">تعديل البيانات</button></div>`);render()}
+
 function addRoot(){sheet(`<h2>إضافة فرد<button class="ic" onclick="cl()">✕</button></h2><label>الاسم</label><input id="rn"><label>الجنس</label><select id="rx"><option value="M">ذكر</option><option value="F">أنثى</option></select><div class="row"><button class="btn" onclick="saveRoot()">حفظ</button></div>`)}
 async function saveRoot(){const n=$("rn").value.trim(),n0=n;if(!n0)return toast("اكتب الاسم");try{await put(gen(),mk({name:n,sex:$("rx").value}));cl()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
-function addKids(c){rid=0;sheet(`<h2>إضافة أبناء إلى ${E(P[c].name)}<button class="ic" onclick="cl()">✕</button></h2><div id="kl"></div><div class="row"><button class="btn o" onclick="kr()">+ فرد آخر</button><button class="btn" onclick="saveKids('${c}')">إضافة الأفراد</button></div>`);kr()}
-function kr(){rid++;const d=document.createElement("div");d.className="kr";d.innerHTML=`<div class="mu">فرد #${rid}</div><input class="kn" placeholder="الاسم"><div class="row" style="margin-top:8px"><select class="kx"><option value="M">ذكر</option><option value="F">أنثى</option></select><select class="ks"><option value="0">حي</option><option value="1">متوفى</option></select></div>`;$("kl").appendChild(d)}
-async function saveKids(c){const p=P[c],sp=p.spouses.find(s=>P[s])||"",rows=[...document.querySelectorAll(".kr")].map(r=>({n:r.querySelector(".kn").value.trim(),x:r.querySelector(".kx").value,d:r.querySelector(".ks").value==="1"})).filter(r=>r.n);
- if(!rows.length)return toast("اكتب اسم واحد على الأقل");
- try{let i=0;for(const r of rows)await put(gen(),mk({name:r.n,sex:r.x,dead:r.d,father:p.sex==="M"?c:sp,mother:p.sex==="F"?c:sp,t:Date.now()+i++}));cl()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
+
 function spT(n){$("s1").hidden=n!==1;$("s2").hidden=n!==2;$("t1").className=n===1?"on":"";$("t2").className=n===2?"on":""}
-function edit(c){const p=P[c];sheet(`<h2>تعديل بيانات فرد<button class="ic" onclick="cl()">✕</button></h2><label>الاسم</label><input id="en" value="${E(p.name)}"><label>الجنس</label><select id="ex"><option value="M"${p.sex==="M"?" selected":""}>ذكر</option><option value="F"${p.sex==="F"?" selected":""}>أنثى</option></select><label>الحالة</label><select id="ed"><option value="0">حي</option><option value="1"${p.dead?" selected":""}>متوفى</option></select><label>تاريخ الميلاد (مثل 1985/3/12 أو 1985)</label><input id="eb" value="${E(p.birth)}"><label>تاريخ الوفاة</label><input id="ev" value="${E(p.death)}">
- <div class="row"><button class="btn" onclick="saveEdit('${c}')">حفظ التعديلات</button></div><div class="row"><button class="btn r" id="dl" onclick="delAsk('${c}')">حذف الفرد</button></div>`)}
-async function saveEdit(c){const n=$("en").value.trim();if(!n)return toast("اكتب الاسم");const b=$("eb").value.trim();try{await put(c,{...P[c],name:n,sex:$("ex").value,dead:$("ed").value==="1",birth:b,year:parseInt(b)||0,death:$("ev").value.trim()});cl()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
-function dirSheet(){const o=[["down","من الأعلى إلى الأسفل"],["up","من الأسفل إلى الأعلى"],["ltr","من اليسار إلى اليمين"],["rtl","من اليمين إلى اليسار"]];
- sheet(`<h2>عرض الشجرة<button class="ic" onclick="cl()">✕</button></h2><div class="mu">اتجاه الشجرة: حدّد اتجاه قراءة شجرة العائلة.</div>${o.map(x=>`<label class="opt"><input type="radio" name="dr" value="${x[0]}"${dir===x[0]?" checked":""}>${x[1]}</label>`).join("")}<div class="row"><button class="btn" onclick="saveDir()">حفظ طريقة العرض</button></div>`)}
-function saveDir(){dir=document.querySelector('input[name=dr]:checked').value;try{localStorage.setItem("dir",dir)}catch(e){}cl();tab="tree";render()}
-function about(){sheet(`<h2>عن الشجرة<button class="ic" onclick="cl()">✕</button></h2><div class="cd"><b>نبذة</b><div class="mu">هذه شجرة عائلية تساعدك على استكشاف طريقة عمل أوراق.</div></div><div class="cd"><div class="li" onclick="stats()">الإحصائيات<span>‹</span></div><div class="li" onclick="dirSheet()">عرض الشجرة<span>‹</span></div></div>`)}
-function stats(){const g={},seen=new Set();roots().forEach(r=>{const w=(c,d)=>{if(seen.has(c))return;seen.add(c);g[d]=(g[d]||0)+1;kids(c).forEach(k=>w(k.code,d+1))};w(r.code,0)});
- const ks=Object.values(P).map(p=>[p.name,kids(p.code).length]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]).slice(0,4),L=Object.keys(g);
- sheet(`<h2>الإحصائيات<button class="ic" onclick="cl()">✕</button></h2><div class="cd"><h3>عدد أفراد كل جيل</h3><div class="li"><span>عدد الأجيال</span><b>${L.length}</b></div>${L.map(d=>`<div class="li"><span>الجيل ${+d+1}</span><b>${g[d]}</b></div>`).join("")}</div>`)}
+
 let DB=null,M={},bin=true,stk=[],DR=null;try{bin=localStorage.getItem("bin")!=="0"}catch(e){}
 const fname=()=>(!M.name||M.name==="عائلة التجربة")?"شجرة العائلة التجريبية":M.name;
 const li=(i,t,f,s)=>`<div class="li2" onclick="${f}"><span class="ib">${i}</span><span class="lt"><b>${t}</b>${s?`<small>${s}</small>`:""}</span><span class="ar">←</span></div>`;
@@ -347,7 +343,7 @@ function bk(){stk.pop();drawScr()}
 function home(){stk=[];drawScr();cl()}
 function soon(t){cl();scr(t,'<div class="cd mu">هذه الميزة غير متوفرة بعد.</div>')}
 function bell(){sheet('<h2>الإشعارات<button class="ic" onclick="cl()">✕</button></h2><div class="cd mu">لا توجد إشعارات.</div>')}
-function menu(){sheet(`<h2><span></span><button class="ic" onclick="cl()">✕</button></h2><div style="text-align:center"><div class="av" style="width:70px;height:70px;margin:auto;font-size:26px">م</div><b>مستخدم التجربة</b><div style="margin-top:6px"><span class="bg alive">مالك العائلة</span></div></div><div class="mu" style="margin-top:10px">إدارة العائلة</div><div class="cd">${li("⚙️","إعدادات العائلة","cl();settings()")}${li("🌲","مشجرة العائلة","cl();orgOpen()","الأب والأم وصلة القرابة بينهما")}${li("🌿","شجرات العائلة","cl();trees()")}${li("🕘","سجل التعديلات","soon('سجل التعديلات')")}${li("📦","السعة والباقات","soon('السعة والباقات')")}</div><div class="mu">الحساب</div><div class="cd">${li("👤","حسابي","soon('حسابي')")}${li("▶️","الشروحات","soon('الشروحات')")}</div>`)}
+
 function settings(){scr("إعدادات العائلة",`<div class="mu">بيانات العائلة</div><div class="cd">${li("📄","بيانات العائلة","famData()","الاسم والوصف والهوية العامة")}${li("📞","اتصال","contact()","رقم جوال للاتصال بالعائلة")}${li("🔒","المشاركة والوصول","soon('المشاركة والوصول')","الدخول وروابط المشاركة")}${li("👁","الخصوصية","soon('الخصوصية')","ما يراه الآخرون من بيانات الأفراد")}</div><div class="mu">إدارة الشجرة</div><div class="cd">${li("🌿","شجرات العائلة","trees()","إضافة الشجرات وتعديل حالتها")}${li("🌳","عرض الشجرة","viewSet()","الاتجاه والترتيب وصياغة الأسماء")+li("🌲","مشجرة العائلة","orgOpen()","شجرة الأب والأم والخيط الذي يربطهما")}</div>`)}
 function trees(){scr("شجرات العائلة",`<div class="cd mu">لكل شجرة مساحة مستقلة لأفرادها وإعداداتها وأخبارها ووثائقها.</div><div class="cd"><b>${E(fname())}</b><div class="mu">${Object.keys(P).length} فرد</div><div class="row"><button class="btn o" onclick="settings()">إعدادات</button><button class="btn o" onclick="home()">فتح</button></div></div>`,'<button class="btn" onclick="toast(\'إنشاء شجرة جديدة غير متوفر بعد\')">إنشاء شجرة جديدة</button>')}
 function famData(){scr("بيانات العائلة",`<div class="cd"><label>اسم الشجرة</label><input id="fa" value="${E(M.name||"")}" placeholder="شجرة العائلة التجريبية"><label>اسم العائلة (اختياري)</label><input id="ff" value="${E(famN())}" placeholder="مثل: بخش"><div class="mu" style="font-size:12px;margin-bottom:8px">يُضاف تلقائياً في نهاية الاسم الكامل للجميع.</div><label>نبذة</label><textarea id="fb" rows="4">${E(M.desc||"")}</textarea></div>`,'<button class="btn" onclick="saveFam()">حفظ</button>')}
@@ -370,12 +366,8 @@ async function saveFam(){const d={...M,name:$("fa").value.trim(),fam:$("ff").val
 function contact(){scr("اتصال",`<div class="cd"><label>رقم الجوال للاتصال</label><input id="cp" type="tel" value="${E(M.phone||"")}" placeholder="+966…">${M.phone?`<a class="btn o" style="margin-top:10px" href="tel:${E(M.phone)}">📞 اتصال</a>`:""}</div>`,'<button class="btn" onclick="saveContact()">حفظ</button>')}
 async function saveContact(){const d={...M,phone:$("cp").value.trim()};try{await DB.doc("meta/family").set(d);M=d;bk()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 function viewSet(){cl();scr("عرض الشجرة",`<div class="cd"><h3>نمط الترتيب</h3><div class="mu">اختر طريقة تنظيم مواضع أفراد الشجرة.</div><div class="row">${radio("od","a","تلقائي",1)}${radio("od","m","يدوي")}</div></div><div class="cd"><h3>اتجاه الشجرة</h3><div class="mu">حدّد اتجاه قراءة شجرة العائلة.</div>${[["down","من الأعلى إلى الأسفل"],["up","من الأسفل إلى الأعلى"],["ltr","من اليسار إلى اليمين"],["rtl","من اليمين إلى اليسار"]].map(x=>`<label class="opt"><input type="radio" name="dr" value="${x[0]}"${dir===x[0]?" checked":""}>${x[1]}</label>`).join("")}</div><div class="cd"><h3>صياغة الاسم الكامل</h3><label class="opt"><input type="radio" name="bn" value="1"${bin?" checked":""}>إضافة بن أو بنت قبل اسم أصل العائلة<br>مثال: محمد بن أحمد بن عبدالله</label><label class="opt"><input type="radio" name="bn" value="0"${bin?"":" checked"}>عرض اسم أصل العائلة دون بن أو بنت<br>مثال: محمد أحمد عبدالله</label></div>`,'<button class="btn" onclick="saveDir()">حفظ طريقة العرض</button>')}
-function dirSheet(){viewSet()}
 function saveDir(){dir=document.querySelector("input[name=dr]:checked").value;bin=document.querySelector("input[name=bn]:checked").value==="1";try{localStorage.setItem("dir",dir);localStorage.setItem("bin",bin?"1":"0")}catch(e){}home();tab="tree";render()}
-function about(){const r=roots()[0];scr("عن العائلة",`<div class="cd"><b>🌳 النسب</b><div>${E(sel&&P[sel]?full(sel):r?r.name:"—")}</div></div><div class="cd"><h3>نبذة</h3><div class="mu">${E(M.desc||"هذه شجرة عائلية تساعدك على استكشاف أفراد العائلة وأنسابهم.")}</div></div><div class="mu">التقارير</div><div class="cd">${li("📊","الإحصائيات","stats()","ملخص أعداد الأفراد والأجيال")}${li("🌿","توزيع الشجرة","soon('توزيع الشجرة')","أكبر التفرعات داخل الشجرة")}</div>`)}
-function members(){scr("أفراد العائلة والضيوف",`<div class="cd">${Object.values(P).map(p=>`<div class="li" onclick="detail('${p.code}')"><span>${E(p.name)}<br><small class="mu">${p.sex==="F"?"أنثى":"ذكر"} · ${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):"حي"}</small></span><span>‹</span></div>`).join("")||'<div class="mu">لا أفراد</div>'}</div>`)}
-function addMenu(c){sel=c;sheet(`<h2>${E(P[c].name)}<button class="ic" onclick="cl()">✕</button></h2><div class="row"><button class="btn" onclick="addKids('${c}')">+ إضافة أبناء</button></div><div class="row"><button class="btn o" onclick="addSp('${c}')">إضافة زوج/ة</button></div>`)}
-function person(c){sel=c;const p=P[c];if(!p)return;sheet(`<h2>معلومات الفرد<button class="ic" onclick="cl()">✕</button></h2><div class="cd"><b style="font-size:18px">${E(p.name)}</b><div style="margin-top:6px"><span class="bg ${p.dead?"dead":"alive"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="bg sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="mu">#${c}</span></div><div class="mu" style="margin-top:8px">الاسم</div><div>${E(full(c))}</div></div><div class="row"><button class="btn o" onclick="cl();detail('${c}')">عرض التفاصيل</button><button class="btn" onclick="cl();tab='tree';egoGo('${c}')">عرض في الشجرة</button></div>`);render()}
+
 const SBT={full:{v:"--sb-f",ds:"solid",t:"إخوان (أب وأم)"},pa:{v:"--sb-p",ds:"dashed",t:"إخوان من الأب فقط"},ma:{v:"--sb-m",ds:"dashed",t:"إخوان من الأم فقط"},mk:{v:"--sb-r",ds:"dotted",t:"🍼 إخوان بالرضاعة"}};
 const sibTag=(k,s)=>(k.sex==="F"?"أخت":"أخ")+(s==="pa"?" لأب":s==="ma"?" لأم":s==="mk"?" بالرضاعة":s==="ad"?" بالتبني":"");
 function sibGroups(p){const g={full:[],pa:[],ma:[],mk:[]},seen=new Set([p.code]),fa=p.father,mo=p.mother;
@@ -405,7 +397,7 @@ function pFind(k,c,v){const e=$("pl"+k);v=(v||"").trim();if(!v){e.innerHTML="";r
  const l=Object.values(P).filter(x=>x.code!==c&&!ks.includes(x.code)&&x.sex===sx&&((x.name||"").includes(v)||full(x.code).includes(v))).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="pPick('${k}','${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function pPick(k,o){PS[k]=o;$("pl"+k).innerHTML="";$("pq"+k).value=P[o].name;$("pc"+k).textContent="المختار: "+full(o)}
-function pRead(){const g=k=>document.querySelector(`input[name=pm${k}]:checked`)?.value||"n";return{fm:g("f"),mm:g("m"),fc:PS.f,mc:PS.m,fn:$("pnf").value.trim(),mn:$("pnm").value.trim()}}
+
 function review(c){const g=n=>document.querySelector(`input[name=${n}]:checked`)?.value,s=g("es"),d={name:$("en").value.trim(),phone:$("ep").value.trim(),...pRead(),sex:g("ex"),dead:s==="1",unk:s==="2",birth:$("eb").value.trim(),death:$("ev").value.trim(),tier:+$("et").value||0,ord:+$("eo").value||0,country:$("ec").value.trim(),branch:$("ef").value.trim(),nick:$("el").value.trim(),home:$("eh").value.trim(),bio:$("eg").value.trim(),clan:$("ek").value.trim(),lname:$("el2").value.trim(),bcal:g("ecal")||"h"};if(!d.name)return toast("اكتب الاسم");DR=d;stk.pop();const r=(l,v)=>`<div class="li"><span class="mu">${l}</span><b>${E(v||"—")}</b></div>`;
  scr("مراجعة التعديلات",`<div class="cd">${r("الاسم",d.name)}${r("الجنس",d.sex==="F"?"أنثى":"ذكر")}${r("الحالة",d.dead?(d.sex==="F"?"متوفاة":"متوفى"):d.unk?"غير معروف":"حي")}${r("الأب",d.fm==="y"?(d.fc&&P[d.fc]?full(d.fc):""):d.fn)}${r("الأم",d.mm==="y"?(d.mc&&P[d.mc]?full(d.mc):""):d.mn)}${r("الجوال",d.phone)}${r("الميلاد",d.birth)}${r("الوفاة",d.death)}${r("الدولة",d.country)}${r("الفخذ",d.clan)}${r("اسم العائلة",d.lname)}${r("الفرع",d.branch)}${r("اللقب",d.nick)}${r("النبذة",d.bio)}${r("حجم الاسم",["عادي","كبير","أكبر"][d.tier])}${r("الترتيب بين إخوته",d.ord===99?"الأخير":d.ord?ORDN[d.ord]:"")}</div>`,`<button class="btn" onclick="conf('${c}')">تأكيد وحفظ</button><button class="btn o" onclick="stk.pop();edit('${c}',DR)">العودة للتعديل</button>`)}
 async function clanUp(s,o,D){const go={clan:(D.clan||"")!==(o.clan||""),lname:(D.lname||"")!==(o.lname||"")};let a=s;const sn=new Set();while(a&&P[a]&&!sn.has(a)&&(go.clan||go.lname)){sn.add(a);const x=P[a],pt={};for(const k of["clan","lname"]){if(!go[k])continue;const cur=x[k]||"",ov=o[k]||"",nv=D[k]||"";if(cur&&cur!==ov){go[k]=false;continue}if(cur!==nv)pt[k]=nv}if(Object.keys(pt).length)await put(a,{...x,...pt});a=x.father||x.mother}}
@@ -414,8 +406,7 @@ async function conf(c){try{const{fn,mn,fm,mm,fc,mc,...D}=DR;let f,m;
   const f0=P[c].father,m0=P[c].mother;f=await side(fm,fc,fn,"M");m=await side(mm,mc,mn,"F");
   if(f&&m&&(f!==f0||m!==m0)){for(const[a,b]of[[f,m],[m,f]])if(P[a]&&!P[a].spouses.includes(b))await put(a,{...P[a],spouses:[...P[a].spouses,b]})}
   const o0={clan:P[c].clan||"",lname:P[c].lname||""};await put(c,{...P[c],...D,father:f,mother:m,year:parseInt(D.birth)||0});await clanUp(f||m,o0,D);home()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
-function kr(){rid++;const d=document.createElement("div");d.className="kr";d.innerHTML=`<div class="mu">فرد #${rid}</div><input class="kn" placeholder="الاسم"><div class="row" style="margin-top:8px"><select class="kx"><option value="M">ذكر</option><option value="F">أنثى</option></select><select class="ks"><option value="0">حي</option><option value="1">متوفى</option><option value="2">غير معروف</option></select></div>`;$("kl").appendChild(d)}
-async function saveKids(c){const p=P[c],sp=p.spouses.find(s=>P[s])||"",rows=[...document.querySelectorAll(".kr")].map(r=>({n:r.querySelector(".kn").value.trim(),x:r.querySelector(".kx").value,s:r.querySelector(".ks").value})).filter(r=>r.n);if(!rows.length)return toast("اكتب اسم واحد على الأقل");try{let i=0;for(const r of rows)await put(gen(),mk({name:r.n,sex:r.x,dead:r.s==="1",unk:r.s==="2",father:p.sex==="M"?c:sp,mother:p.sex==="F"?c:sp,t:Date.now()+i++}));cl()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
+
 function render(){$("bf").style.display=tab==="tree"?"flex":"none";$("b1").className=hi>0?"":"off";$("b2").className=hi<hist.length-1?"":"off";$("cn").textContent=Object.keys(P).length+" من 5000 فرد";$("fnm").textContent=fname();document.querySelectorAll("#nav .tb button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));const m=$("main");
  if(!col&&loaded&&!demo){m.innerHTML='<div id="ms">سجّل دخولك لعرض الشجرة.</div>';return}
  if(!loaded){m.innerHTML='<div id="ms">جاري التحميل…</div>';return}
@@ -423,12 +414,10 @@ function render(){$("bf").style.display=tab==="tree"?"flex":"none";$("b1").class
  const t=tmode==="ego"?egoHTML():treeHTML();m.innerHTML=`<div id="tw">${t.h}</div><div id="zb"><button onclick="zm(.15)">＋<br>تكبير</button><button onclick="zm(-.15)">－<br>تصغير</button><button onclick="fit(${t.W})">⛶<br>ملاءمة</button><button id="ubk" onclick="undoLast()"${UJ.length?"":" disabled"}>↩<br>تراجع</button></div>`;const w=$("tw");w.scrollLeft=Math.max(0,(w.scrollWidth-w.clientWidth)/2)}
 }
 let hist=[],hi=-1;
-function go2(d){const n=hi+d;if(n<0||n>=hist.length)return;hi=n;person(hist[n],1)}
+
 function person(c,k){const p=P[c];if(!p)return;sel=c;if(!k&&hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}let n=1,q=p;while((q=P[q.father||q.mother])&&n<30)n++;
- sheet(`<h2><span>معلومات الفرد</span><button class="ic">♡</button></h2><div class="cd"><b style="font-size:20px">${E(p.name)}</b><div class="chs"><span class="ch ${p.dead?"dd":"al"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="ch sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="ch">مستوى ${n}</span><span class="ch">#${c}</span></div><div class="nr2"><span class="mu">الاسم</span><span>${E(full(c))}</span></div></div><div class="cd two"><span class="g" onclick="cl();tab='tree';egoGo('${c}')">👁 عرض في الشجرة</span><span onclick="cl();detail('${c}')">ⓘ عرض التفاصيل</span></div>`);render()}
-function addKids(c){rid=0;cl();const f=P[c].sex==="F";scr(`إضافة أبناء إلى ${E(P[c].name)}`,`<div class="mu" style="font-size:15px;margin:6px 4px 12px">مسودتك محفوظة تلقائيًا، ويمكنك العودة لإكمالها لاحقًا.</div><div class="cd" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="mu">${f?"لتحديد الأب، أضف زوجاً للأم أولاً.":"لتحديد الأم، أضف زوجة للأب أولًا."}</span><button class="btn o" style="width:auto;padding:10px 16px" onclick="addSp('${c}')">＋ ${f?"إضافة زوج للأم":"إضافة زوجة للأب"}</button></div><div id="kl"></div>`,`<div class="row" style="margin:0"><button class="btn" onclick="saveKids('${c}')">إضافة الأفراد</button><button class="btn o" style="width:38%;margin:0" onclick="kr()">فرد آخر ＋</button></div>`);kr()}
+ sheet(`<h2><span>معلومات الفرد</span><button class="ic">♡</button></h2><div class="cd"><b style="font-size:20px">${E(p.name)}</b><div class="chs"><span class="ch ${p.dead?"dd":"al"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="ch sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="ch">مستوى ${n}</span><span class="ch">#${c}</span></div><div class="nr2"><span class="mu">الاسم</span><span>${E(full(c))}</span></div>${extraInfo(p)}</div><div class="cd two"><span class="g" onclick="cl();tab='tree';egoGo('${c}')">👁 عرض في الشجرة</span><span onclick="cl();detail('${c}')">ⓘ عرض التفاصيل</span></div>`);render()}
 function kr(){const i=++rid,d=document.createElement("div");d.className="kr";d.dataset.i=i;d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><span class="mu" style="font-size:12px">فرد #${i}</span><button class="ic" onclick="this.closest('.kr').remove()">🗑</button></div><input class="kn" placeholder="الاسم" style="margin:8px 0 6px"><div class="row">${radio("x"+i,"M","ذكر",1)}${radio("x"+i,"F","أنثى")}</div><div class="row">${radio("s"+i,"0","حي",1)}${radio("s"+i,"1","متوفى")}${radio("s"+i,"2","غير معروف")}</div>`;$("kl").appendChild(d)}
-async function saveKids(c){const p=P[c],sp=p.spouses.find(s=>P[s])||"",g=n=>document.querySelector(`input[name=${n}]:checked`).value,rows=[...document.querySelectorAll(".kr")].map(r=>({n:r.querySelector(".kn").value.trim(),x:g("x"+r.dataset.i),s:g("s"+r.dataset.i)})).filter(r=>r.n);if(!rows.length)return toast("اكتب اسم واحد على الأقل");try{let i=0;for(const r of rows)await put(gen(),mk({name:r.n,sex:r.x,dead:r.s==="1",unk:r.s==="2",father:p.sex==="M"?c:sp,mother:p.sex==="F"?c:sp,t:Date.now()+i++}));home()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 (()=>{const L=f=>`url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g transform='${f}'><path d='M0 200C40 150 75 105 125 35' fill='none' stroke='#6b8f5a' stroke-width='1.6'/><g fill='#8fbd78' opacity='.7'>${[[22,168,-40],[50,140,-60],[78,112,-70],[104,78,-80],[126,46,-95],[38,178,-15],[70,148,-25],[98,116,-35],[122,84,-45]].map(a=>`<ellipse cx='${a[0]}' cy='${a[1]}' rx='24' ry='8' transform='rotate(${a[2]} ${a[0]} ${a[1]})'/>`).join("")}</g></g></svg>`)}")`,s=document.documentElement.style;s.setProperty("--l1",L(""));s.setProperty("--l2",L("translate(200 0) scale(-1 1)"));s.setProperty("--l3",L("translate(0 200) scale(1 -1)"));s.setProperty("--l4",L("translate(200 200) scale(-1 -1)"))})();
 const ico=d=>`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16803c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const IP='<circle cx="12" cy="4" r="1.8"/><circle cx="6" cy="13" r="1.8"/><circle cx="18" cy="13" r="1.8"/><path d="M12 6v3M12 9l-6 2.5M12 9l6 2.5M3 19h6M15 19h6"/>',IH='<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',IU='<circle cx="10" cy="8" r="3.5"/><path d="M4 20c0-3.5 2.5-6 6-6M17 14v6M14 17h6"/>',IC='<circle cx="12" cy="11" r="6"/><path d="M9.5 11h.01M14.5 11h.01M10 14c1 1 3 1 4 0M8 5.5C9 4 11 3 12 3s3 1 4 2.5"/>';
@@ -447,7 +436,7 @@ const EM={"\u{1F4C4}":"doc","\u2699":"gear","\u{1F33F}":"tree","\u{1F333}":"tree
 const sw=e=>{const t=e.textContent.replace(/\uFE0F/g,""),k=Object.keys(EM).find(x=>t.startsWith(x));if(k&&!e.querySelector("svg"))e.innerHTML=I[EM[k]]+(t.length>k.length?" "+E(t.slice(k.length).trim()):"")};
 new MutationObserver(()=>document.querySelectorAll(".ib,.two span,.kr .ic,a.btn").forEach(sw)).observe(document.body,{childList:true,subtree:true});
 function zm(d){zoom=Math.min(2,Math.max(.08,zoom+(zoom<.4?d/3:d)));render()}
-function fit(W){const w=$("tw");zoom=Math.min(1,Math.max(.05,w.clientWidth/W));render()}
+
 function dist(){cl();const cnt=c=>{const s=new Set(),w=x=>{if(s.has(x))return;s.add(x);kids(x).forEach(k=>w(k.code))};w(c);return s.size},r=roots().map(p=>({n:p.name,c:cnt(p.code)})).sort((a,b)=>b.c-a.c).slice(0,15),mx=r[0]?r[0].c:1;scr("توزيع الشجرة",`<div class="mu" style="margin:6px 4px 12px">أكبر التفرعات داخل الشجرة (عدد أفراد كل فرع).</div><div class="cd">${r.map(x=>`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between"><span>${E(x.n)}</span><b>${x.c}</b></div><div class="bar"><i style="width:${x.c/mx*100}%"></i></div></div>`).join("")||'<div class="mu">لا بيانات</div>'}</div>`)}
 const s0=soon;soon=t=>t==="توزيع الشجرة"?dist():s0(t);
 let lastC=null,z0=false;const p0=person;person=(c,k)=>{lastC=null;p0(c,k)};
@@ -469,8 +458,7 @@ const PG={
 "الشروحات":()=>{cl();scr("الشروحات",`<div class="cd"><ol class="mu" style="line-height:2;padding-inline-start:20px"><li>اضغط على أي بطاقة لعرض معلومات الفرد.</li><li>زر "إضافة" يفتح اختيار القرابة: والد، زوج، أخ، أو ابن.</li><li>من "عرض التفاصيل" تعدّل البيانات وتراجعها قبل الحفظ.</li><li>من أيقونة الاتجاه تغيّر اتجاه الشجرة وصياغة الاسم الكامل.</li><li>البحث في الأعلى يوصلك لأي فرد ويوسّط الشجرة عليه.</li></ol></div>`)}};
 const s2=soon;soon=t=>PG[t]?PG[t]():s2(t);
 I.dl=sv0('<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>');
-function soonExp(){toast("اختر التصميم وصدّر صورة أو PDF")}
-function exportSheet(){const n=sel&&P[sel]?E(P[sel].name):"";sheet(`<h2><span class="tt">تصدير الشجرة PNG</span><button class="ic" onclick="cl()">✕</button></h2><div class="mu">اختر ما تريد تصديره كصورة.</div>${n?`<div class="row"><button class="btn" onclick="exportPNG('${sel}')">فرع ${n} وذريته</button></div>`:""}<div class="row"><button class="btn${n?" o":""}" onclick="exportPNG()">الشجرة كاملة</button></div><div class="mu" style="margin-top:10px">الشجرة الكبيرة جداً تُصغَّر عند التصدير، والأفضل تصدير فرع محدد لصورة أوضح.</div>`)}
+
 async function exportPNG(rc){cl();let dl=null;try{dl=await claude.use("downloads")}catch(e){}if(!dl)dl=BDL;
  const seen=new Set(),out=[];let off=0;(rc?[P[rc]]:roots()).forEach(r=>{if(!r||seen.has(r.code))return;const n=lay(r.code,0,seen);place(n,off,out);off+=n.w});
  if(!out.length)return toast("لا يوجد أفراد للتصدير");
@@ -493,19 +481,8 @@ async function exportPNG(rc){cl();let dl=null;try{dl=await claude.use("downloads
  await new Promise(rs=>cv.toBlob(async b=>{try{if(!b)return toast("تعذر إنشاء الصورة");pgSet(88,"جاري الحفظ");try{await dl.save({filename:"شجرة-العائلة.png",data:b})}catch(e){if(!e||e.code!=="declined")toast("تعذر الحفظ: "+((e&&(e.message||e.code))||e))}}finally{rs()}},"image/png"))}
 
 EM["\u2B07"]="dl";
-async function dsave(n,d){let dl=null;try{dl=await claude.use("downloads")}catch(e){}if(!dl)dl=BDL;try{await dl.save({filename:n,data:d})}catch(e){if(!e||e.code!=="declined")toast("تعذر الحفظ: "+((e&&(e.message||e.code))||e))}}
-function expCSV(){cl();const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"',nm=c=>P[c]?P[c].name:"",r=[["الرمز","الاسم","الاسم الكامل","الجنس","الحالة","الأب","الأم","الأزواج","الميلاد","الجوال"].map(q).join(",")];Object.values(P).forEach(p=>r.push([p.code,p.name,full(p.code),p.sex==="F"?"أنثى":"ذكر",p.dead?(p.sex==="F"?"متوفاة":"متوفى"):"حي",nm(p.father),nm(p.mother),p.spouses.map(nm).join(" / "),p.birth,p.phone||""].map(q).join(",")));dsave("افراد-العائلة.csv","\uFEFF"+r.join("\r\n"))}
-function expJSON(){cl();const o={};Object.values(P).forEach(p=>{const d={...p};delete d.code;o[p.code]=d});dsave("نسخة-احتياطية-العائلة.json",JSON.stringify(o))}
-let TXT="";
 function outline(c,seen,d){seen.add(c);const p=P[c],sp=p.spouses.map(s=>P[s]).filter(Boolean).map(s=>s.name).join("، ");let o="  ".repeat(d)+(d?"└ ":"")+p.name+(p.dead?" (متوفى)":"")+(sp?(p.sex==="F"?" — زوجها: ":" — زوجته: ")+sp:"")+"\n";kids(c).forEach(k=>{if(!seen.has(k.code))o+=outline(k.code,seen,d+1)});return o}
-function textSheet(){const n=sel&&P[sel]?E(P[sel].name):"";sheet(`<h2>الشجرة كنص<button class="ic" onclick="cl()">✕</button></h2><div class="mu">اختر ما تريد نسخه أو مشاركته.</div>${n?`<div class="row"><button class="btn" onclick="showTxt('${sel}')">فرع ${n} وذريته</button></div>`:""}<div class="row"><button class="btn${n?" o":""}" onclick="showTxt()">الشجرة كاملة</button></div>`)}
-function showTxt(c){const seen=new Set();const s=c?outline(c,seen,0):roots().map(r=>seen.has(r.code)?"":outline(r.code,seen,0)).join("\n");TXT=s;cl();scr("الشجرة كنص",`<div class="cd"><textarea id="tx" rows="14" readonly style="width:100%;direction:rtl;white-space:pre">${E(s)}</textarea></div>`,`<button class="btn" onclick="cpTxt()">نسخ</button><button class="btn o" onclick="shTxt()">مشاركة</button><button class="btn o" onclick="dsave('شجرة-العائلة.txt',TXT)">حفظ كملف</button>`)}
-async function cpTxt(){try{await navigator.clipboard.writeText(TXT);toast("تم النسخ")}catch(e){const t=$("tx");if(!t)return toast("تعذر النسخ");t.select();try{document.execCommand("copy");toast("تم النسخ")}catch(x){toast("تعذر النسخ، حدّد النص وانسخه يدوياً")}}}
-async function shTxt(){if(navigator.share){try{await navigator.share({text:TXT})}catch(e){}}else cpTxt()}
 function nasab(c){const p=P[c];if(!p)return"";const n=[kn(p)+p.name],seen=new Set([c]);let q=p;while(n.length<80){const f=P[q.father||q.mother];if(!f||seen.has(f.code))break;seen.add(f.code);if(bin)n.push(q.sex==="F"?"بنت":"بن");n.push(f.name);q=f}const fx=inh(c,"clan"),fy=inh(c,"lname")||famN();return n.join(" ")+(fx?" "+fx:"")+(fy?" "+fy:"")}
-function nasabSheet(){cl();scr("نسب فرد",`<div class="cd"><label>ابحث عن فرد</label><input id="ns" placeholder="ابحث بالاسم" oninput="nsr(this.value)"><div id="nl"></div></div><div id="no"></div>`);if(sel&&P[sel])nsp(sel)}
-function nsr(v){const l=$("nl");v=v.trim();if(!v){l.innerHTML="";return}l.innerHTML=Object.values(P).filter(p=>p.name.includes(v)).slice(0,8).map(p=>`<div class="li" onclick="nsp('${p.code}')"><span>${E(full(p.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
-function nsp(c){const s=nasab(c);TXT=s;$("nl").innerHTML="";$("ns").value=P[c].name;$("no").innerHTML=`<div class="cd hl"><div class="mu">النسب الكامل</div><b style="font-size:18px;line-height:1.8">${E(s)}</b><div class="row" style="margin-top:10px"><button class="btn" onclick="cpTxt()">نسخ</button><button class="btn o" onclick="shTxt()">مشاركة</button></div></div>`}
 function setTheme(v){try{localStorage.setItem("theme",v)}catch(e){}if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme")}
 function themeSheet(){let c="auto";try{c=localStorage.getItem("theme")||"auto"}catch(e){}cl();scr("المظهر",`<div class="cd"><h3>مظهر التطبيق</h3>${[["auto","تلقائي (حسب الجهاز)"],["light","فاتح"],["dark","داكن"]].map(x=>`<label class="opt"><input type="radio" name="th" value="${x[0]}"${c===x[0]?" checked":""} onchange="setTheme(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل بطاقات الأسماء</h3>${[["cl","الكلاسيكي (دائرة وثلاث نقاط)"],["new","بأزرار ظاهرة (عرض / إضافة / تعديل)"]].map(x=>`<label class="opt"><input type="radio" name="cs" value="${x[0]}"${(document.body.classList.contains("cs-cl")?"cl":"new")===x[0]?" checked":""} onchange="setCardStyle(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل إطار البطاقة</h3>${[["none","عادي"],["cloud","☁️ سحابة"],["leaf","🍃 ورقة"],["pill","💊 كبسولة"]].map(x=>`<label class="opt"><input type="radio" name="sh" value="${x[0]}"${(((document.body.className.match(/\bsh-(\w+)/)||[])[1])||"none")===x[0]?" checked":""} onchange="setShape(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>حجم الخط في البطاقات</h3>${[["1","عادي"],["1.15","كبير"],["1.3","كبير جداً"]].map(x=>`<label class="opt"><input type="radio" name="fz" value="${x[0]}"${String(curFz())===x[0]?" checked":""} onchange="setFz(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>بطاقات الأسماء</h3><label class="opt"><input type="checkbox"${document.body.classList.contains("hide-sp")?" checked":""} onchange="setHideSp(this.checked)">إخفاء اسم الزوج/الزوجة من بطاقات الأسماء</label></div>`)}
 function setHideSp(v){try{localStorage.setItem("hsp",v?"1":"")}catch(e){}document.body.classList.toggle("hide-sp",!!v)}
@@ -514,11 +491,7 @@ function setCardStyle(v){try{localStorage.setItem("cs",v)}catch(e){}document.bod
 try{if(localStorage.getItem("cs")!=="new")document.body.classList.add("cs-cl")}catch(e){document.body.classList.add("cs-cl")}
 /* لوحة على شكل شجرة فنية */
 let BSC="";
-function boardSheet(){const H=branchHeads(),pc=(P[egoOf]&&egoOf)||(sel&&P[sel]&&sel)||"",o=[];
- if(pc&&kids(pc).length)o.push({v:pc,t:"ذرية "+P[pc].name,s:(descOf(pc).length+1)+" فرد"});
- H.slice(0,12).forEach(h=>{if(h.code!==pc)o.push({v:h.code,t:"فرع "+h.name,s:h.n+" فرد"})});
- o.push({v:"__all",t:"الشجرة كاملة",s:Object.keys(P).length+" فرد"});BSC=o[0].v;
- sheet(`<h2>تحويل الشجرة إلى لوحة<button class="ic" onclick="cl()">✕</button></h2><div class="cd hl"><h3>لوحة على شكل شجرة</h3><div class="mu">الجد في الجذع وذريته في الأغصان، صورة جاهزة للطباعة والمشاركة.</div></div><div class="mu" style="margin:8px 4px">اختر نطاق اللوحة:</div>${o.map((q,i)=>`<label class="opt"><input type="radio" name="bs" value="${q.v}"${i?"":" checked"} onchange="BSC=this.value"><span style="flex:1">${E(q.t)}</span><small class="mu">${q.s}</small></label>`).join("")}<div class="mu" style="margin:8px 4px;font-size:12px">الأفضل اختيار فرع محدد؛ في الشجرة الكبيرة جداً تصغر الأسماء.</div><div class="row"><button class="btn" onclick="boardGo('png')">حفظ كصورة PNG</button><button class="btn o" onclick="boardGo('pdf')">حفظ PDF</button></div>`)}
+
 async function boardGo(fmt){cl();let dl=null;try{dl=await claude.use("downloads")}catch(e){}if(!dl)dl=BDL;
  const cv=await boardCanvas(BSC);if(!cv)return;pgSet(60,"جاري ترميز الملف");const nm=BSC==="__all"?fname():P[BSC].name;
  if(fmt==="pdf"){try{await dl.save({filename:"لوحة-"+nm+".pdf",data:mkPdf(cv)})}catch(e){if(!e||e.code!=="declined")toast("تعذر الحفظ: "+((e&&(e.message||e.code))||e))}return}
@@ -561,22 +534,14 @@ async function boardCanvas(sc){
   if(w>=64){const ww=isR?Math.max(w,150):w,hh=isR?Math.max(h,60):h;cvRR(x,px-ww/2,py-hh/2,ww,hh,hh/2);x.fill();x.stroke();x.setLineDash([]);const fs=Math.max(9,Math.min(26,ww*.15));x.fillStyle="#2a3b2c";x.font="700 "+fs+"px Tajawal,system-ui,sans-serif";x.fillText(p.name,px,py+fs*.35,ww-12)}
   else{x.beginPath();x.arc(px,py,Math.max(5,w*.42),0,7);x.fill();x.stroke();x.setLineDash([])}});
  return cv}
-function helpSheet(){cl();scr("دليل الاستخدام",`<div class="cd"><h3>التنقل</h3><div class="mu">اسحب الشجرة بإصبعك، واستخدم أزرار التكبير والتصغير على الجانب.</div></div><div class="cd"><h3>الأفراد</h3><div class="mu">اضغط على أي بطاقة لعرض معلومات الفرد، واستخدم «＋ إضافة» لإضافة أبناء أو زوج/ة.</div></div><div class="cd"><h3>الأدوات</h3><div class="mu">حاسبة القرابة تعرف صلة أي فردين، والتصدير يحفظ الشجرة كصورة أو نص.</div></div>`)}
 (()=>{try{const v=localStorage.getItem("theme");if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v)}catch(e){}})();
-function menu(){sheet(`<h2><span></span><button class="ic" onclick="cl()">✕</button></h2><div style="text-align:center"><div class="avl"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="24" width="4" height="12" rx="1.5" fill="#8a5a2b"/><circle cx="20" cy="15" r="9" fill="#2f9e57"/><circle cx="12" cy="21" r="6.5" fill="#3fb86a"/><circle cx="28" cy="21" r="6.5" fill="#3fb86a"/></svg></div><b style="display:block;margin-top:8px">${E(fname())}</b><small class="mu">${Object.keys(P).length} فرد</small></div><div class="mu" style="margin-top:10px">أدوات العائلة</div><div class="cd">${li("📖","نبذة عن العائلة","cl();aboutFam()","نبذة عن القبيلة المسجّلة في الشجرة")}${li("🕌","صلة الرحم","rahmScr()","الأقارب الواجب والمستحب صلتهم")}${li("\u{1F465}","حاسبة القرابة","cl();relCalc()","اعرف صلة القرابة بين أي فردين")}${li("\u{1F558}","سجل التعديلات","logs()","آخر الإضافات والتعديلات والحذف")}${li("\u{1F332}","مشجرة العائلة","cl();orgOpen()","الأب والأم وصلة القرابة بينهما")}${li("\u{1F4CA}","الإحصائيات","cl();stats()","الأجيال وأكثر الأفراد أبناءً")}</div><div class="mu">التصدير والنسخ</div><div class="cd">${li("\u2B07","تصدير الشجرة إلى صورة","awSheet()","شجرة شخص أو فرد وذريته بدقة عالية")}${li("\u{1F5BC}","تحويل الشجرة إلى لوحة (تجريبي)","soonExp()","تصدير PDF · نسخة تجريبية")}</div><div class="mu">الإعدادات</div><div class="cd">${li("\u{1F333}","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("\u2699","المظهر","themeSheet()","فاتح أو داكن أو تلقائي")}${li("\u24D8","دليل الاستخدام","helpSheet()","جولة تعريفية بكل مميزات التطبيق")}</div>`)}
+function menu(){sheet(`<h2><span></span><button class="ic" onclick="cl()">✕</button></h2><div style="text-align:center"><div class="avl"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="24" width="4" height="12" rx="1.5" fill="#8a5a2b"/><circle cx="20" cy="15" r="9" fill="#2f9e57"/><circle cx="12" cy="21" r="6.5" fill="#3fb86a"/><circle cx="28" cy="21" r="6.5" fill="#3fb86a"/></svg></div><b style="display:block;margin-top:8px">${E(fname())}</b><small class="mu">${Object.keys(P).length} فرد</small></div><div class="mu" style="margin-top:10px">أدوات العائلة</div><div class="cd">${li("📖","نبذة عن العائلة","cl();aboutFam()","نبذة عن القبيلة المسجّلة في الشجرة")}${li("📰","أخبار العائلة <span class=\"soonb\">قريباً</span>","cl();newsSoon()","مناسبات العائلة وأخبارها")}${li("🕌","صلة الرحم","rahmScr()","الأقارب الواجب والمستحب صلتهم")}${li("\u{1F465}","حاسبة القرابة","cl();relCalc()","اعرف صلة القرابة بين أي فردين")}${li("\u{1F558}","سجل التعديلات","logs()","آخر الإضافات والتعديلات والحذف")}${li("\u{1F332}","مشجرة العائلة","cl();orgOpen()","الأب والأم وصلة القرابة بينهما")}${li("\u{1F4CA}","الإحصائيات","cl();stats()","الأجيال وأكثر الأفراد أبناءً")}</div><div class="mu">التصدير والنسخ</div><div class="cd">${li("\u2B07","تصدير الشجرة إلى صورة","awSheet()","شجرة شخص أو فرد وذريته بدقة عالية")}${li("\u{1F5BC}","تحويل الشجرة إلى لوحة (تجريبي)","soonExp()","تصدير PDF · نسخة تجريبية")}</div><div class="mu">الإعدادات</div><div class="cd">${li("\u{1F333}","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("\u2699","المظهر","themeSheet()","فاتح أو داكن أو تلقائي")}${li("\u{1F4A1}","إرشادات سريعة","cl();qGuide()","طريقة الاستخدام في دقيقة")}${li("\u24D8","دليل الاستخدام","helpSheet()","جولة تعريفية بكل مميزات التطبيق")}${li("\u26F6","ملء الشاشة وتثبيت التطبيق","cl();fsSheet()","يظهر بدون شريط المتصفح")}${li("\u{1F527}","أزرار التكبير والتصغير","cl();zbToggle()","إظهار أو إخفاء الأزرار الجانبية")}</div>`)}
 let RA=null,RB=null;
 function relCalc(){RA=RB=null;scr("حاسبة القرابة",`<div class="cd"><label>الفرد الأول</label><input id="ra" placeholder="ابحث بالاسم" oninput="rp('a',this.value)"><div id="la"></div><label>الفرد الثاني</label><input id="rb" placeholder="ابحث بالاسم" oninput="rp('b',this.value)"><div id="lb"></div></div><div id="rr"></div>`)}
 function rp(w,v){const l=$("l"+w);v=v.trim();if(!v){l.innerHTML="";return}l.innerHTML=Object.values(P).filter(p=>p.name.includes(v)).slice(0,8).map(p=>`<div class="li" onclick="rs('${w}','${p.code}')"><span>${E(full(p.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function rs(w,c){if(w==="a")RA=c;else RB=c;$("r"+w).value=P[c].name;$("l"+w).innerHTML="";rel()}
 function up(c){const m={},q=[[c,0,""]];m[c]={d:0,s:"",k:""};while(q.length){const[x,d,s]=q.shift(),p=P[x];[["F",p.father],["M",p.mother]].forEach(([t,y])=>{if(y&&P[y]&&!m[y]){const s2=d===0?t:s;m[y]={d:d+1,s:s2,k:x};q.push([y,d+1,s2])}})}return m}
-function relName(a,b,A,B,x,z){const f=B.sex==="F",pr=(m,w)=>f?w:m,kb=P[z.k];
- if(a===0)return b===1?pr("ابن","ابنة"):b===2?pr("حفيد","حفيدة"):pr("حفيد","حفيدة")+" من الجيل "+b;
- if(b===0)return a===1?pr("أب","أم"):a===2?pr("جد","جدة"):pr("جد","جدة")+" من الجيل "+a;
- if(a===1&&b===1){const sf=A.father&&A.father===B.father,sm=A.mother&&A.mother===B.mother;return pr("أخ","أخت")+" "+(sf&&sm?pr("شقيق","شقيقة"):sf?"لأب":"لأم")}
- if(a===1&&b===2)return pr("ابن","بنت")+" "+(kb&&kb.sex==="F"?"أخت":"أخ");
- if(a===2&&b===1)return x.s==="F"?pr("عم","عمة"):pr("خال","خالة");
- if(a===2&&b===2)return pr("ابن","بنت")+" "+(x.s==="F"?(kb&&kb.sex==="F"?"عمة":"عم"):(kb&&kb.sex==="F"?"خالة":"خال"));
- return"قريب (يبعد "+a+" أجيال عن الأول و"+b+" عن الثاني)"}
+
 const KIN=(()=>{const M=t=>t.sex!=="F";
 function ancMap(t,e){const u=new Map([[t.code,{d:0,prev:null}]]),a=[];e!=="m"&&P[t.father]&&a.push(t.father),e!=="f"&&P[t.mother]&&a.push(t.mother),a.forEach(r=>u.set(r,{d:1,prev:t.code}));let s=a,o=1;for(;s.length&&o<12;){const r=[];s.forEach(h=>{const v=P[h];[v.father,v.mother].forEach(d=>{P[d]&&!u.has(d)&&(u.set(d,{d:o+1,prev:h}),r.push(d))})}),s=r,o++}return u}
 function pathOf(t,e,u){const a=[];let s=u;for(;s!=null;)a.push(P[s]),s=t.get(s).prev;return a.reverse()}
@@ -610,18 +575,9 @@ function milkLn(A,B){const r=milkRel(A),f=x=>x.sex==="F";let t="",b="";
  else if(r.ks.includes(B.code)){t=(f(B)?"ابنة":"ابن")+" بالرضاعة";b=(f(A)?"أم":"أب")+" بالرضاعة"}
  if(!t)return"";return`<div class="cd hl"><div class="mu">🍼 قرابة بالرضاعة</div><div style="font-size:19px;font-weight:800;margin-top:6px;line-height:1.7">${E(B.name)} ${t} لـ ${E(A.name)}</div><div class="mu" style="margin-top:2px">وبالعكس: ${E(A.name)} ${b} لـ ${E(B.name)}</div><div style="margin-top:8px;color:var(--g);font-weight:700">محرم</div></div>`}
 
-function checkData(){const a=Object.values(P),g={};a.forEach(p=>{const k=p.name.trim()+"|"+(p.father||"")+"|"+(p.mother||"");(g[k]=g[k]||[]).push(p)});
- const dup=Object.values(g).filter(x=>x.length>1&&(x[0].father||x[0].mother)),iso=a.filter(p=>!p.father&&!p.mother&&!p.spouses.length&&!kids(p.code).length),bad=a.filter(p=>(p.father&&P[p.father]&&P[p.father].sex==="F")||(p.mother&&P[p.mother]&&P[p.mother].sex==="M")),
- sec=(t,l,f)=>`<div class="cd"><h3>${t} (${l.length})</h3>${l.length?l.slice(0,50).map(f).join(""):'<div class="mu">لا يوجد ✓</div>'}</div>`,row=p=>`<div class="li" onclick="detail('${p.code}')"><span>${E(full(p.code))}</span><span>‹</span></div>`;
- scr("فحص البيانات",sec("أسماء مكررة تحت نفس الوالدين",dup,x=>`<div class="li" onclick="detail('${x[0].code}')"><span>${E(x[0].name)} <small class="mu">×${x.length} — ${E(full(x[0].father||x[0].mother))}</small></span><span>‹</span></div>`)+sec("أفراد بلا أي ارتباط",iso,row)+sec("والد/والدة بجنس غير متوافق",bad,row))}
 /* ===== خريطة الشخص (طريقة عرض الشجرة القديمة) بتصميم البطاقات الحالي ===== */
 let tmode="ego",egoOf=null,egoC=true,egoZ=false;
-/* العمر داخل الدائرة (هجري أو ميلادي) */
-const calNow=cal=>{try{const f=new Intl.DateTimeFormat("en-u-ca-"+cal,{year:"numeric",month:"numeric",day:"numeric"}).formatToParts(new Date()),g=t=>+(f.find(x=>x.type===t)||{}).value;return{y:g("year"),m:g("month"),d:g("day")}}catch(e){return null}};
-const dparse=t=>{const m=String(t||"").match(/(\d{4})(?:\D+(\d{1,2})(?:\D+(\d{1,2}))?)?/);return m?{y:+m[1],m:+m[2]||0,d:+m[3]||0}:null};
-function ageOf(p){const b=dparse(p.birth);if(!b)return null;const cal=(b.y>=1500||p.bcal==="g")?"gregory":"islamic-umalqura";let n=calNow(cal);if(!n)return null;
- if(p.dead){const dd=dparse(p.death);if(!dd)return null;n=dd.y>=1500&&cal==="gregory"||dd.y<1500&&cal!=="gregory"?dd:null;if(!n)return null}
- let a=n.y-b.y;if(b.m&&n.m&&(n.m<b.m||n.m===b.m&&b.d&&n.d&&n.d<b.d))a--;return a>=0&&a<=130?a:null}
+
 const nmFs=(s,b)=>{const L=(s||"").length;return L>45?Math.min(b,11.5):L>34?Math.min(b,12.5):L>26?Math.min(b,14):L>20?Math.min(b,15):b};
 const badge=p=>{try{const l=sibsOf(p).slice();l.push(p);srt(l);const i=l.findIndex(x=>x.code===p.code);return String(i<0?1:i+1)}catch(e){return"1"}};
 const male=p=>p.sex!=="F";
@@ -635,7 +591,8 @@ const kidsMilk=t=>{if(typeof MILKOFF!=="undefined"&&MILKOFF)return[];try{return(
 const kidsX=t=>{const a=kids(t.code),mk=kidsMilk(t);let r=a;if(t.sex==="F"&&COLD){const x=Object.values(P).filter(k=>k.mother===t.code&&k.father&&!COLD.has(k.father)||k.mother===t.code&&!k.father&&!a.includes(k));r=srt([...new Set([...a,...x])])}return mk.length?srt([...new Set([...r,...mk])]):r};
 const defEgo=()=>{const t=Object.values(P);return(t.find(e=>e.tier===2)||t.find(e=>e.tier===1)||srt(t.slice()).find(e=>!(P[e.father]||P[e.mother]))||t[0]).code};
 const COL={"--gd":"#c8962b","--wj":"#0f8a5f","--mt":"#c98300","--f":"#2f6fb5","--m":"#c2467a","--s":"#d93025","--hm":"#17a2b8","--rd":"#d93025","--hf":"#8e6b3e"};
-function milkRel(t){const e=t.milk.filter(r=>P[r]),u=Object.values(P),a=[...new Set(e.flatMap(r=>P[r].spouses.filter(h=>P[h]&&male(P[h]))))],s=u.filter(r=>r.code!==t.code&&(r.milk.some(h=>e.includes(h))||(e.includes(r.mother)&&(!t.ms||t.ms.includes(r.code)))||(t.mother&&r.milk.includes(t.mother)&&(!r.ms||r.ms.includes(t.code))))),o=u.filter(r=>r.milk.includes(t.code)||male(t)&&r.milk.some(h=>t.spouses.includes(h)));return{M:e,fathers:a,sibs:s.map(r=>r.code),ks:o.map(r=>r.code)}}
+function milkRelBase(t){const e=t.milk.filter(r=>P[r]),u=Object.values(P),a=[...new Set(e.flatMap(r=>P[r].spouses.filter(h=>P[h]&&male(P[h]))))],s=u.filter(r=>r.code!==t.code&&(r.milk.some(h=>e.includes(h))||(e.includes(r.mother)&&(!t.ms||t.ms.includes(r.code)))||(t.mother&&r.milk.includes(t.mother)&&(!r.ms||r.ms.includes(t.code))))),o=u.filter(r=>r.milk.includes(t.code)||male(t)&&r.milk.some(h=>t.spouses.includes(h)));return{M:e,fathers:a,sibs:s.map(r=>r.code),ks:o.map(r=>r.code)}}
+function milkRel(t){return mcGet("b",t,()=>milkRelBase(t))}
 let OW1=250,OH1=140,OW2=236,OH2=108,OIND=30,OV=26;
 function colOf(t,e){const u=[{p:t,cx:OW1/2,y:0,w:OW1,h:OH1,d:1}],a=[];let s=OW1;
  const o=(h,v,d,i,n)=>{const l=kidsX(h).filter(f=>!e.has(f.code));if(!l.length)return i;const p=v-d/2+8;let w=i+OV+10,E=i;
@@ -682,8 +639,8 @@ function egoLayout(e){
    K.forEach((O,G)=>{const lt=b*(Math.abs(y)+n/2+40+n/2+G*(n+34));_.push(lt);h.push({x:lt,y:N,text:O.pill,col:C});O.items.forEach(($t,yt)=>z($t.p,lt,N+30+yt*(l+p),$t.tag,C,$t.dash))});
    const tt=K[K.length-1];f(y+b*n/2,N,_[_.length-1]-b*((tt.pill.length*7.2+26)/2),N,C);return N+30+Math.max(...K.map(O=>O.items.length))*(l+p)};
   const x=(b,y,S)=>[b.filter(j=>male(j)).map(j=>({p:j,tag:y})),b.filter(j=>!male(j)).map(j=>({p:j,tag:S}))];
-  if(a){const[b,y]=x(sibsOf(a),"عم","عمة");MKX(b,y,RM&&RM.am,"عم","عمة");usedAm=1;F=c(1,m,{items:b,pill:"الأعمام (إخوة الأب)"},{items:y,pill:"العمات (أخوات الأب)"},"--wj")}
-  if(s){const[b,y]=x(sibsOf(s),"خال","خالة");MKX(b,y,RM&&RM.kh,"خال","خالة");usedKh=1;D=c(-1,M,{items:b,pill:"الأخوال (إخوة الأم)"},{items:y,pill:"الخالات (أخوات الأم)"},"--wj")}
+  if(a){const[b,y]=x(sibsOf(a),"عم","عمة");MKX(b,y,RM&&RM.am,"عم","عمة");(RM?RM.fathers||[]:[]).map(c=>P[c]).filter(c=>c&&c.code!==u.code&&c.code!==u.father&&!b.some(k=>k.p.code===c.code)).forEach(c=>b.push({p:c,tag:"أب بالرضاعة",dash:1}));usedAm=1;F=c(1,m,{items:b,pill:"الأعمام (إخوة الأب)"},{items:y,pill:"العمات (أخوات الأب)"},"--wj")}
+  if(s){const[b,y]=x(sibsOf(s),"خال","خالة");MKX(b,y,RM&&RM.kh,"خال","خالة");(RM?RM.M||[]:[]).map(c=>P[c]).filter(c=>c&&c.code!==u.code&&c.code!==u.mother&&!y.some(k=>k.p.code===c.code)).forEach(c=>y.push({p:c,tag:"أم بالرضاعة",dash:1}));usedKh=1;D=c(-1,M,{items:b,pill:"الأخوال (إخوة الأم)"},{items:y,pill:"الخالات (أخوات الأم)"},"--wj")}
   k=Math.max(g+l+(CMP?60:130),F+30,D+30);if(a)f(60,k,m,g+l,"--gd");if(s)f(-60,k,M,g+l,"--gd")}
  if(RM){const pr=[...(RM.fathers||[]),...(RM.M||[])].map(c=>P[c]).filter((c,ix,ar)=>c&&c.code!==u.code&&c.code!==u.father&&c.code!==u.mother&&ar.indexOf(c)===ix&&!o.some(q=>q.p.code===c.code));if(pr.length){const ex={"1":n/2,"-1":n/2};o.forEach(c=>{if(c.y<g+l&&c.y+c.h>g){ex["1"]=Math.max(ex["1"],c.x+c.w/2);ex["-1"]=Math.max(ex["-1"],-(c.x-c.w/2))}});let ri=0,li=0;pr.forEach(c=>{const tg=(male(c)?"أب":"أم")+" بالرضاعة";if(male(c)){z(c,ex["1"]+40+n/2+ri*(n+34),g,tg,"--gd",1);ri++}else{z(c,-(ex["-1"]+40+n/2+li*(n+34)),g,tg,"--gd",1);li++}})}}
  o.push({p:u,x:0,y:k,w:d,h:i,kind:"c",col:"--gd"});
@@ -792,7 +749,6 @@ const r5=render;render=()=>{r5();
  const z=$("zb");
  if(tmode==="ego"&&egoC){const w=$("tw"),c=w&&w.querySelector(".nd.cen");if(c){egoC=false;const cr=c.getBoundingClientRect(),wr=w.getBoundingClientRect();w.scrollLeft+=cr.left+cr.width/2-(wr.left+wr.width/2);w.scrollTop+=cr.top+cr.height/2-(wr.top+wr.height*.4)}}};
 
-
 /* ===== اتصال Firebase Realtime Database ===== */
 const FB_URL="https://familytree-d9bab-default-rtdb.firebaseio.com";
 function fbDB(){
@@ -835,7 +791,7 @@ return{mahramSet,kunya,rahmLv}})();
 let RAW=null,PM=null,maskOn=true;try{maskOn=localStorage.getItem("mask")!=="0"}catch(e){}
 function maskView(t){if(!ME||!maskOn||!welDone)return t;const e=t[ME];if(!e||e.sex==="F")return t;const u=P,r={};P=t;try{const s=MSK.mahramSet(e);Object.values(t).forEach(o=>{r[o.code]=o.sex==="F"&&!s.has(o.code)?{...o,rn:o.name,name:MSK.kunya(o),masked:1}:o})}finally{P=u}return r}
 function remask(){if(!RAW)return;PM=maskView(RAW);P=PM}
-function toggleMask(){maskOn=!maskOn;try{localStorage.setItem("mask",maskOn?"1":"0")}catch(e){}remask();cl();render();toast(maskOn?"إخفاء أسماء النساء: مفعّل":"إخفاء أسماء النساء: متوقف")}
+
 function extraCards(p){let h="";const mp=ME&&P[ME];
  if(mp&&p.code!==ME&&p.sex==="F"&&mp.sex!=="F"){const m=MSK.mahramSet(mp).has(p.code);h+=`<div class="cd"><b>المحرمية</b><div style="margin-top:6px;font-weight:700;color:${m?"var(--g)":"#dc2626"}">${m?"محرم لك":"غير محرم لك"}</div></div>`}
  const m=milkRel(p),r=[];m.M.length&&r.push("الأم بالرضاعة: "+m.M.map(x=>E(P[x].name)).join("، "));m.fathers.length&&r.push("الأب بالرضاعة: "+m.fathers.map(x=>E(P[x].name)).join("، "));m.sibs.length&&r.push("إخوة بالرضاعة: "+m.sibs.map(x=>E(P[x].name)).join("، "));m.ks.length&&r.push("أبناء بالرضاعة: "+m.ks.map(x=>E(P[x].name)).join("، "));(m.ex||[]).forEach(([l,c])=>c.length&&r.push(l+": "+c.map(x=>E(P[x].name)).join("، ")));
@@ -858,7 +814,7 @@ function rahmDraw(){const e=$("scr"),sb=e&&e.querySelector(".sb"),st=sb?sb.scrol
  stk[stk.length-1].b=html;drawScr();const nb=$("scr").querySelector(".sb");nb&&(nb.scrollTop=st);const on=$("scr").querySelector(".rm.on");on&&on.scrollIntoView({inline:"center",block:"nearest"})}
 function rahmScr(){cl();const mp=ME&&P[ME];if(!mp){scr("صلة الرحم",'<div class="cd mu">اكتب اسمك أولاً من القائمة (تغيير الاسم).</div>');return}const h=hijriNow();RS.y=h.y;RS.mon=h.m;RS.half=h.m>6?1:0;RS.top="w";scr("صلة الرحم","");rahmDraw()}
 function rahmPick(c){const x=P[c];if(!x)return;const S=rld()[rkey()]||{},cur=S[c],L=x.dead?RT_D:RT_A;sheet(`<h2>اختر نوع الصلة<button class="ic" onclick="cl()">✕</button></h2><div class="mu" style="margin-bottom:8px">${E(x.name)}${x.dead?" (متوفى)":""}</div>${L.map(t=>`<div class="li2" onclick="rahmSet('${c}','${t[0]}')"><span class="ib">${t[1]}</span><span class="lt"><b>${t[0]}</b></span>${cur===t[0]?"<span>✓</span>":""}</div>`).join("")}${cur?`<div class="li2" onclick="rahmSet('${c}','')"><span class="ib">✖</span><span class="lt"><b>إلغاء الصلة</b></span></div>`:""}`)}
-function rahmSet(c,t){const all=rld(),k=rkey(),o=all[k]||{};t?o[c]=t:delete o[c];all[k]=o;rsv(all);cl();rahmDraw()}
+function rahmSet(c,t){const all=rld(),k=rkey(),o=all[k]||{};t?o[c]=t:delete o[c];all[k]=o;rsv(all);rahmPush();cl();rahmDraw()}
 function rahmGo(c){home();tab="tree";tmode="ego";egoGo(c)}
 /* ===== شاشة الترحيب ===== */
 let ME=null,welDone=false;try{ME=localStorage.getItem("me")||null}catch(e){}
@@ -869,8 +825,7 @@ function showWel(){const w=$("wel");w.hidden=false;w.innerHTML=`<div class="bx">
 function fullRaw(c){const u=P;P=RAW||P;try{return full(c)}finally{P=u}}
 function welGo(){const v=$("wn").value,r=findMeW(v);if(!v.trim()){$("we").textContent="اكتب اسمك أولاً";return}if(!r.length){$("we").textContent="ما لقيت الاسم، جرّب الاسم الأول فقط أو الاسم الثنائي";return}if(r.length===1)return welPick(r[0].code);$("we").textContent="اختر أنت:";$("wl").innerHTML=r.slice(0,12).map(p=>`<button class="wb" onclick="welPick('${p.code}')">${E(fullRaw(p.code))}</button>`).join("")}
 function welPick(c){ME=c;try{localStorage.setItem("me",c)}catch(e){}welDone=true;$("wel").hidden=true;remask();tab="tree";tmode="ego";egoOf=c;sel=c;egoC=true;egoZ=false;if(typeof hist!=="undefined"&&hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}render()}
-function welSkip(){}
-function welAgain(){cl();welDone=false;showWel()}
+
 const rW=render;render=()=>{if(P!==PM){RAW=P;PM=maskView(RAW);P=PM}rW();egoBanner();if(!welDone&&loaded&&Object.keys(P).length){welDone=true;showWel()}};
 
 render();
@@ -878,7 +833,6 @@ render();
 const GN=["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر"];
 const gname=i=>GN[i]||String(i+1);
 function descOf(c){const out=[],seen=new Set([c]);let q=[c],d=1;while(q.length){const n=[];q.forEach(x=>allKids(x).sort((a,b)=>(b.father===x)-(a.father===x)).forEach(k=>{if(seen.has(k.code))return;seen.add(k.code);k.__d=d;out.push({...k,d,via:x});n.push(k.code)}));q=n;d++}return out}
-const pct=(a,b)=>b?Math.round(a*100/b):0;
 const bar=(a,ca,b,cb)=>{const t=a+b||1;return`<div class="sbar"><i style="width:${a*100/t}%;background:${ca}"></i><i style="width:${b*100/t}%;background:${cb}"></i></div>`};
 function sumCard(c){const p=P[c],D=descOf(c),n=D.length,ch=kids(c),al=D.filter(x=>!x.dead).length,dd=n-al,m=D.filter(x=>x.sex!=="F").length,f=n-m,g=n?Math.max(...D.map(x=>x.d)):0;
  const flds=["birth","phone","email","country","branch"],fill=D.length?Math.round(D.reduce((s,x)=>s+flds.filter(k=>x[k]).length/flds.length,0)*100/D.length):0;
@@ -938,12 +892,6 @@ function ordDraw(){const e=$("ol");if(!e)return;e.innerHTML=ORL.map((k,i)=>{cons
 function ordTo(k,i){const f=ORL.indexOf(k);ORL.splice(f,1);ORL.splice(i,0,k);ordDraw()}
 async function ordSave(c){try{for(let i=0;i<ORL.length;i++){const q=P[ORL[i]];if(q&&q.ord!==i+1)await put(ORL[i],{...q,ord:i+1},1)}bk();toast("تم حفظ الترتيب");render()}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 
-/* التصدير */
-function scopeOf(rc){return rc?[rc,...descOf(rc).map(x=>x.code)]:Object.keys(P)}
-function xlsSave(name,rows,head){const t=`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>html:root:root:root body .nd.dd.dd{background:linear-gradient(120deg,#4b5159,#363b41)!important;border-color:#9aa0a8!important;border-top-color:#9aa0a8!important}html:root:root:root body .nd.dd.dd .nm b{color:#f1f3f5!important}html:root:root:root body .nd.dd.dd .ui small{color:#d1d5db!important}</style>
-</head><body><table dir="rtl" border="1"><tr>${head.map(h=>`<th style="background:#dfeee3">${E(h)}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${E(v??"")}</td>`).join("")}</tr>`).join("")}</table></body></html>`;dsave(name,t)}
-function expXls(rc){cl();const nm=c=>P[c]?P[c].name:"",L=scopeOf(rc).map(c=>P[c]).filter(Boolean);xlsSave("افراد-العائلة.xls",L.map(p=>[p.code,p.name,full(p.code),p.sex==="F"?"أنثى":"ذكر",p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي",nm(p.father),nm(p.mother),p.spouses.map(nm).join(" / "),p.birth||"",p.death||"",p.phone||"",p.email||"",p.country||"",p.branch||"",p.nick||""]),["الرمز","الاسم","الاسم الكامل","الجنس","الحالة","الأب","الأم","الأزواج","الميلاد","الوفاة","الجوال","البريد","الدولة","الفرع","اللقب"])}
-function expGens(rc){cl();const rows=[];let mx=0;const seen=new Set(),w=(c,d)=>{if(seen.has(c)||!P[c])return;seen.add(c);const r=[];r[d]=P[c].name;mx=Math.max(mx,d);rows.push(r);kids(c).forEach(k=>w(k.code,d+1))};(rc?[P[rc]]:roots()).forEach(r=>r&&w(r.code,0));const head=[];for(let i=0;i<=mx;i++)head.push("الجيل "+gname(i));xlsSave("مخطط-الاجيال.xls",rows.map(r=>head.map((_,i)=>r[i]||"")),head)}
 function mkPdf(cv){const u8=a=>{const s=atob(a),o=new Uint8Array(s.length);for(let i=0;i<s.length;i++)o[i]=s.charCodeAt(i);return o};const jpg=u8(cv.toDataURL("image/jpeg",.92).split(",")[1]),k=Math.min(.75,14000/Math.max(cv.width,cv.height)),W=Math.round(cv.width*k),H=Math.round(cv.height*k),en=s=>new TextEncoder().encode(s),parts=[],off=[];let len=0;const add=b=>{parts.push(b);len+=b.length};
  add(en("%PDF-1.4\n"));const ob=(n,body,bin)=>{off[n]=len;add(en(n+" 0 obj\n"+body));if(bin){add(bin);add(en("\nendstream"))}add(en("\nendobj\n"))};
  ob(1,"<< /Type /Catalog /Pages 2 0 R >>");ob(2,"<< /Type /Pages /Kids [3 0 R] /Count 1 >>");ob(3,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im 4 0 R >> >> /Contents 5 0 R >>`);
@@ -980,9 +928,7 @@ async function exportPerson(c,fmt){cl();c=c||(P[egoOf]&&egoOf)||(sel&&P[sel]&&se
  x.fillStyle="#9ca3af";x.font="12px Tajawal,system-ui,sans-serif";x.fillText("الأخضر: الفرد المحدد  ·  الذهبي: أجداده",W/2,H-14);
  if(fmt==="pdf"){try{await dl.save({filename:"شجرة-"+p.name+".pdf",data:mkPdf(cv)})}catch(e){if(!e||e.code!=="declined")toast("تعذر الحفظ: "+((e&&(e.message||e.code))||e))}return}
  cv.toBlob(async b=>{if(!b)return toast("تعذر إنشاء الصورة");try{await dl.save({filename:"شجرة-"+p.name+".png",data:b})}catch(e){if(!e||e.code!=="declined")toast("تعذر الحفظ: "+((e&&(e.message||e.code))||e))}},"image/png")}
-function expImg(rc,f){exportPerson(rc,f)}
-function exportSheet(rc){rc=rc||(P[egoOf]&&egoOf)||(sel&&P[sel]&&sel)||(ME&&P[ME]&&ME)||"";if(!rc||!P[rc])return toast("اختر فرداً من الشجرة أولاً");const n=E(P[rc].name),o=(ic,t,s,f)=>`<div class="li2" onclick="${f}"><span class="ib">${ic}</span><span class="lt"><b>${t}</b><small>${s}</small></span></div>`;
- sheet(`<h2>تصدير شجرة ${n}<button class="ic" onclick="cl()">✕</button></h2><div class="mu" style="margin-bottom:6px">تشمل الصورة: ${n} وإخوانه وأبناءه وأجداده وإخوان أجداده.</div>${o("🖼️","صورة (PNG)","عالية الدقة للمشاركة",`exportPerson('${rc}','png')`)}${o("📄","ملف PDF","للعرض والطباعة",`exportPerson('${rc}','pdf')`)}`)}
+
 function extraInfo(p){const r=[["اللقب",p.nick],["الدولة",p.country],["الفرع",p.branch]].filter(x=>x[1]);
  const hm=(p.home||"").trim(),ur=/^https?:\/\//i.test(hm)||/^(www\.|maps\.|goo\.gl|g\.page)/i.test(hm),hl=ur?(/^https?:/i.test(hm)?hm:"https://"+hm):"";
  const ct=(p.phone?`<div style="margin-top:8px">📞 <span class="mu">رقم الجوال:</span> <a href="tel:${E(p.phone)}" dir="ltr" style="font-weight:700;color:inherit">${E(p.phone)}</a></div>`:"")+(hm?`<div style="margin-top:6px">📍 <span class="mu">موقع البيت:</span> ${ur?`<a href="${E(hl)}" target="_blank" rel="noopener" style="font-weight:700">فتح الموقع</a>`:`<b>${E(hm)}</b>`}</div>`:"");
@@ -1096,7 +1042,6 @@ html body.cs-cl .nd.dd.dd::after{background:#8b9097!important}
 :root[data-theme="dark"] body .nd.dd.dd{background:linear-gradient(120deg,#2b2e32,#202327)!important}
 :root[data-theme="dark"] body .nd.dd.dd .nm b{color:#aab0b8!important}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) body .nd.dd.dd{background:linear-gradient(120deg,#2b2e32,#202327)!important}:root:not([data-theme="light"]) body .nd.dd.dd .nm b{color:#aab0b8!important}}
-
 
 .nd[data-i]::after{letter-spacing:-.5px}
 body.cs-cl .nd[data-i]:not([data-i=""])::after{font-size:15px}
@@ -1244,7 +1189,7 @@ function expSvg(rt,kf,i,title){const d=Object.fromEntries(EXD[0].map((k,j)=>[k,E
  return{W:w,H:h,svg:`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" font-family="Tajawal,Arial,sans-serif"><rect width="${w}" height="${h}" fill="${d.bg}"/>${d.bd?`<rect x="8" y="8" width="${w-16}" height="${h-16}" fill="none" stroke="${d.bd}" stroke-width="6" rx="10"/>`:""}${d.gr?`<ellipse cx="${w/2}" cy="${h}" rx="${w*.62}" ry="${h*.09}" fill="${d.gr}"/>`:""}<text x="${w/2}" y="${46*tk}" font-size="${30*tk}" font-weight="700" fill="#3b2a1a" text-anchor="middle">${E(title)}</text><g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})">${ln.join("")}${cd}</g></svg>`}}
 function expBody(){const H=orgHead();if(!H.cur)return H.h;return H.h+`<div class="cd hl"><b>سيتم تصدير: ${E(H.cur.t)}</b><div class="mu">${H.cur.n} فرد · بتصميم ${H.cur.n>50?1:5} (${H.cur.n>50?"أكثر من 50 فرد":"حتى 50 فرد"})</div></div>`}
 function expDraw(){const s=stk[stk.length-1];if(!s||s.t!=="تحويل الشجرة إلى لوحة (تجريبي)")return;s.b=expBody();drawScr()}
-function soonImg(){cl();scr("تصدير الشجرة إلى صورة",'<div class="cd mu" style="text-align:center;font-size:20px;padding:40px 10px">قريباً ⏳</div>')}
+
 function soonExp(){cl();orgS=null;scr("تحويل الشجرة إلى لوحة (تجريبي)",expBody(),'<button class="btn" onclick="expGo(\'pdf\')">📄 إنشاء PDF</button>')}
 async function expGo(t){t="pdf";try{toast("جاري التجهيز…");const cu=orgHead().cur;if(!cu)return toast("اختر شخصاً له أب وأم مسجّلين");const rt=cu.rt,r=expSvg(rt,cu.k2,cu.n>50?2:1,"شجرة عائلة "+rt.name),sc=Math.min(2,4096/Math.max(r.W,r.H)),cv=document.createElement("canvas");cv.width=Math.round(r.W*sc);cv.height=Math.round(r.H*sc);
   const im=new Image();await new Promise((ok,no)=>{im.onload=ok;im.onerror=()=>no(new Error("تعذّر رسم الصورة"));im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(r.svg)});
@@ -1280,7 +1225,6 @@ function mFind(c,v){const e=$("ml");v=(v||"").trim();if(!v){e.innerHTML="";retur
  e.innerHTML=l.map(x=>`<div class="li" onclick="mPick('${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function mPick(o){MP=o;$("ml").innerHTML="";$("mq").value=P[o].name;$("mc").textContent="المختار: "+full(o);mMomUpd()}
 let MC="";
-function mMomUpd(){const b=$("mMom");if(!b)return;const y=document.querySelector("input[name=mm]:checked")?.value==="y",m=y&&MP&&P[MP]&&P[P[MP].mother]?P[MP].mother:"";b.hidden=!!m;$("mMomI").hidden=!m;if(m)$("mMomI").textContent="أمه: "+full(m)+" — ستصير أمك بالرضاعة، وكل أبنائها وبناتها إخوتك بالرضاعة."}
 let PB={};
 function pickBox(id,sx,lb,ex,cb){PB[id]={code:"",sx,ex:ex||[],cb};return `<div class="pbx"><label>${lb}</label><div class="row"><label class="opt" style="flex:1;margin:0;padding:9px"><input type="radio" name="pb${id}" value="y" checked onchange="pbMode('${id}')">نعم</label><label class="opt" style="flex:1;margin:0;padding:9px"><input type="radio" name="pb${id}" value="n" onchange="pbMode('${id}')">لا</label></div><div id="pbY${id}"><input id="pbq${id}" placeholder="اكتب الاسم للبحث" oninput="pbFind('${id}',this.value)"><div id="pbl${id}"></div><div id="pbc${id}" class="mu" style="margin-top:6px">لم يتم الاختيار</div></div><div id="pbN${id}" hidden><input id="pbn${id}" placeholder="اكتب الاسم"></div></div>`}
 function pbY(id){return document.querySelector(`input[name=pb${id}]:checked`).value==="y"}
@@ -1330,7 +1274,6 @@ async function saveKids(c){const p=P[c],f=p.sex==="F",g=n=>document.querySelecto
  try{if(o==="new"){const n=$("kpn").value.trim();if(!n)return toast("اكتب اسم "+(f?"الأب":"الأم")+" الجديد"+(f?"":"ة"));o=gen();await put(o,mk({name:n,sex:f?"M":"F",spouses:[c]}));await put(c,{...P[c],spouses:[...new Set([...P[c].spouses,o])]})}
   else if(o==="none")o="";
   let i=0;for(const r of rows)await put(gen(),mk({name:r.n,sex:r.x,dead:r.s==="1",unk:r.s==="2",father:f?o:c,mother:f?c:o,t:Date.now()+i++}));home();toast("تمت الإضافة",1)}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
-
 
 /* ===== تصدير الشجرة إلى صورة (بتصميم الورقة الكريمية) ===== */
 let EXPC=false,AWM="ego",AWP=null,AWH=false,AWK=false,MILKOFF=false;
@@ -1442,42 +1385,7 @@ async function awEgoCanvasFull(c){const p=P[c];if(!p)return toast("اختر ال
  if(G.it){const nx=G.it.x+OX,ny=G.it.y+OY;awRR(x,nx,ny,G.vt,G.it.h,12);x.fillStyle="#fff8e6";x.fill();x.strokeStyle="#e5d3a0";x.lineWidth=1.4;x.stroke();x.textAlign="right";x.fillStyle="#7a5a12";x.font=`700 15px ${FF}`;x.fillText("📝 على الهامش (رضاعة / مطلّقات / وفاة)",nx+G.vt-14,ny+26);x.font=`400 14px ${FF}`;x.fillStyle="#4b5563";G.ot.forEach((l,i)=>x.fillText(l,nx+G.vt-14,ny+50+i*22,G.vt-28))}
  return{cv,name:p.name,lw:W}}
 /* تصدير «شجرة شخص»: الشخص في الوسط، أجداده على اليمين، وأبناؤه وأحفاده على اليسار (نفس تصميم «الفرد وذريته») */
-async function awEgoCanvas(c){const p=P[c];if(!p)return toast("اختر الاسم أولاً"),null;
- const seen=new Set([c]);
- const up=(q,d)=>{const n={p:q,d,kids:[]};if(d<3)[P[q.father],P[q.mother]].forEach(a=>{if(!a||seen.has(a.code))return;seen.add(a.code);n.kids.push(up(a,d+1))});n.lv=n.kids.length?n.kids.reduce((a,b)=>a+b.lv,0):1;return n};
- const R=[P[p.father],P[p.mother]].filter(a=>a&&!seen.has(a.code)).map(a=>{seen.add(a.code);return up(a,1)});
- const Lf=awBuild(p,false,seen,allKids).kids;
- if(!R.length&&!Lf.length)return toast("ما فيه أجداد ولا أبناء مسجّلون لهذا الفرد"),null;
- await awFont();
- const all=[];const col=n=>{all.push(n);n.kids.forEach(col)};R.forEach(col);Lf.forEach(col);const real=[p,...all.map(n=>n.p)];
- const lr=R.reduce((a,b)=>a+b.lv,0),ll=Lf.reduce((a,b)=>a+b.lv,0);
- const rows=Math.max(lr,ll,1),fs=rows>60?15:rows>36?18:rows>18?21:26,RH=Math.round(fs*(rows>36?1.75:2)),GAP=Math.round(fs*2),
-  cm=document.createElement("canvas").getContext("2d");cm.direction="rtl";cm.font=`700 ${fs}px Tajawal,system-ui,sans-serif`;
- const tw=n=>cm.measureText(n.p.name).width+10;
- const rootW=Math.max(cm.measureText(p.name).width*1.15+50,110),rootH=fs*2.1;
- const place=(ns)=>{let r=0;const walk=n=>{if(!n.kids.length){n.r=r++;return}n.kids.forEach(walk);n.r=(n.kids[0].r+n.kids[n.kids.length-1].r)/2};ns.forEach(walk);return r};
- const rR=place(R),rL=place(Lf);
- const side=(ns,sg)=>{const cw=[];const dp=(n,d)=>{n.dd=d;cw[d]=Math.max(cw[d]||0,tw(n));n.kids.forEach(k=>dp(k,d+1))};ns.forEach(n=>dp(n,1));
-  const xc=[];let e=rootW/2+GAP;for(let d=1;d<cw.length;d++){xc[d]=sg*(e+cw[d]/2);e+=cw[d]+GAP}return{cw,xc,ext:e-GAP}};
- const sR=side(R,1),sL=side(Lf,-1);
- const half=Math.max(sR.ext||rootW/2,sL.ext||rootW/2)+60,W=Math.max(1100,half*2),k=awK(W),HD=Math.round(104*k),PT=64,CH=rows*RH+PT*2,BT=Math.round(170*k),H=HD+CH+BT,s=awScale(W,H);
- const cv=document.createElement("canvas");cv.width=Math.ceil(W*s);cv.height=Math.ceil(H*s);const x=cv.getContext("2d");x.scale(s,s);
-  awFrame(x,W,H,{fam:fname(),sub:"شجرة "+p.name,stats:awStats(real)});
- const cx0=W/2,my=HD+PT+rows*RH/2;x.direction="rtl";
- const yOf=(n,rs)=>my-rs*RH/2+(n.r+.5)*RH;
- const linkSide=(ns,rs,S)=>{const sg=S===sR?1:-1,pe=cx0+sg*rootW/2,ys=ns.map(k=>yOf(k,rs)),mx=pe+sg*GAP/2;if(!ns.length)return;
-  x.lineWidth=1.8;x.strokeStyle=AWC.ln;x.beginPath();x.moveTo(pe,my);x.lineTo(mx,my);x.moveTo(mx,Math.min(my,...ys));x.lineTo(mx,Math.max(my,...ys));
-  ns.forEach((k,i)=>{x.moveTo(mx,ys[i]);x.lineTo(cx0+S.xc[1]-sg*S.cw[1]/2,ys[i])});x.stroke();
-  const rec=(n)=>{if(!n.kids.length)return;const py=yOf(n,rs),px=cx0+S.xc[n.dd],pw=S.cw[n.dd],pe2=px+sg*pw/2,ys2=n.kids.map(k=>yOf(k,rs)),mx2=pe2+sg*GAP/2;
-   x.beginPath();x.moveTo(pe2,py);x.lineTo(mx2,py);x.moveTo(mx2,Math.min(py,...ys2));x.lineTo(mx2,Math.max(py,...ys2));
-   n.kids.forEach((k,i)=>{x.moveTo(mx2,ys2[i]);x.lineTo(cx0+S.xc[k.dd]-sg*S.cw[k.dd]/2,ys2[i])});x.stroke();n.kids.forEach(rec)};ns.forEach(rec)};
- linkSide(R,rR,sR);linkSide(Lf,rL,sL);
- const names=(ns,rs,S)=>{const rec=n=>{const X=cx0+S.xc[n.dd],Y=yOf(n,rs),f=n.p.sex==="F";x.textAlign="center";x.fillStyle=n.p.dead?"#6b7280":f?"#8a3a63":AWC.gd;x.font=`700 ${fs}px Tajawal,system-ui,sans-serif`;x.fillText(n.p.name,X,Y+fs*.34,S.cw[n.dd]);if(n.p.dead){const w0=Math.min(x.measureText(n.p.name).width,S.cw[n.dd]);x.fillStyle=f?"#ec4899":"#3b82f6";x.beginPath();x.arc(X+w0/2+9,Y+fs*.34-fs*.3,Math.max(4,fs*.2),0,7);x.fill()}
-   if(n.p.dead){x.fillStyle=AWC.mu;x.font=`400 ${Math.round(fs*.5)}px Tajawal,system-ui,sans-serif`;x.fillText("رحمه الله",X,Y+fs*.34+fs*.62)}n.kids.forEach(rec)};ns.forEach(rec)};
- names(R,rR,sR);names(Lf,rL,sL);
- awRR(x,cx0-rootW/2,my-rootH/2,rootW,rootH,14);x.fillStyle="#eaf6ee";x.fill();x.strokeStyle=AWC.gr;x.lineWidth=3.2;x.stroke();
- x.textAlign="center";x.fillStyle=AWC.gd;x.font=`700 ${Math.round(fs*1.15)}px Tajawal,system-ui,sans-serif`;x.fillText(p.name,cx0,my+fs*.4,rootW-20);
- return{cv,name:p.name,lw:W}}
+
 function awSheet(){cl();let m="";try{m=localStorage.getItem("meP")||""}catch(e){}AWP=[m,typeof ME!=="undefined"?ME:"",egoOf,sel].find(c=>c&&P[c])||defEgo();AWM="ego";
  scr("تصدير الشجرة إلى صورة",awBody(),'<button class="btn" onclick="awGo()">🖼️ إنشاء الصورة</button>')}
 function awBody(){const o=(v,t,d)=>`<label class="opt" style="align-items:flex-start"><input type="radio" name="awm" value="${v}"${AWM===v?" checked":""} onchange="awMode('${v}')"><span style="flex:1"><b>${t}</b><div class="mu" style="font-size:12.5px;margin-top:2px">${d}</div></span></label>`;
@@ -1719,16 +1627,19 @@ applyFL();
 /* ===== توسيع أحكام الرضاعة: الأجداد، الأعمام والأخوال، أبناء الإخوة، الأحفاد، وإخوة الأب (لبن الفحل) ===== */
 (function(){
  const milkRel0=milkRel,ml0=milkLn,sg0=sibGroups;
- const KC=c=>Object.values(P).filter(r=>r.father===c||r.mother===c);
- const sibC=c=>{const p=P[c];return p?Object.values(P).filter(r=>r.code!==c&&((p.father&&r.father===p.father)||(p.mother&&r.mother===p.mother))):[]};
+ /* فهرس الأبناء والترتيب: يُبنى مرة لكل رسم بدل المرور على كل الأفراد في كل استدعاء */
+ const IX=()=>mcGet("ix",0,()=>{const kid=new Map(),pos=new Map();let i=0;for(const r of Object.values(P)){pos.set(r.code,i++);for(const q of[r.father,r.mother])if(q){let a=kid.get(q);if(!a)kid.set(q,a=[]);if(!a.includes(r))a.push(r)}}return{kid,pos}});
+ const KC=c=>IX().kid.get(c)||[];
+ const sibC=c=>{const p=P[c];if(!p)return[];const{kid,pos}=IX(),s=new Set();if(p.father)(kid.get(p.father)||[]).forEach(r=>r.father===p.father&&s.add(r));if(p.mother)(kid.get(p.mother)||[]).forEach(r=>r.mother===p.mother&&s.add(r));s.delete(p);return[...s].sort((a,b)=>pos.get(a.code)-pos.get(b.code))};
  function walk(c,up,lim){const m=new Map(),q=[[c,0]];
   while(q.length){const [x,d]=q.shift();if(d>=lim)continue;
    const nx=up?[P[x]&&P[x].father,P[x]&&P[x].mother]:KC(x).map(k=>k.code);
    nx.forEach(y=>{if(y&&P[y]&&y!==c&&!m.has(y)){m.set(y,d+1);q.push([y,d+1])}})}
   return m}
  /* أسرة الرضاعة لشخص رضع: مرضعته، زوجها (صاحب اللبن)، إخوته، أجداده، أعمامه وأخواله، أبناء إخوته، وفروعه */
- function fam(N){
-  const o=milkRel0(N),W=o.M,H=o.fathers;if(!W.length)return null;
+ const fam=N=>mcGet("f",N,()=>fam0(N));
+ function fam0(N){
+   const o=milkRel0(N),W=o.M,H=o.fathers;if(!W.length)return null;
   const PAR=[...W,...H],S=new Set(o.sibs),hw=new Set();
   H.forEach(h=>(P[h].spouses||[]).forEach(w=>P[w]&&hw.add(w)));
   Object.values(P).forEach(r=>{
@@ -1746,12 +1657,13 @@ applyFL();
   S.forEach(s=>walk(s,false,10).forEach((d,c)=>{if(c!==N.code&&!S.has(c)&&!skip.has(c)&&!D.has(c)&&(!nie.has(c)||nie.get(c)>d))nie.set(c,d)}));
   return{W,H,S,gp,am,kh,un3,nie,D,PAR}}
  const LB=[["gp","الأجداد بالرضاعة"],["am","الأعمام والعمات بالرضاعة"],["kh","الأخوال والخالات بالرضاعة"],["un3","إخوة الأجداد بالرضاعة"],["nie","أبناء الإخوة والأخوات بالرضاعة"],["gk","الأحفاد بالرضاعة"]];
- milkRel=function(t){
-  const old=milkRel0(t),R={sx:new Set,gp:new Set,am:new Set,kh:new Set,un3:new Set,gk:new Set,nie:new Set};
+ const holders=()=>mcGet("h",0,()=>Object.values(P).filter(N=>N.milk&&N.milk.some(w=>P[w])));
+  milkRel=t=>mcGet("m",t,()=>milkRelX(t));
+  function milkRelX(t){
+   const old=milkRel0(t),R={sx:new Set,gp:new Set,am:new Set,kh:new Set,un3:new Set,gk:new Set,nie:new Set};
   const A=(k,c)=>{if(c&&c!==t.code&&P[c])R[k].add(c)};
-  Object.values(P).forEach(N=>{
-   if(!N.milk||!N.milk.some(w=>P[w]))return;
-   const F=fam(N);if(!F)return;const id=t.code;
+  holders().forEach(N=>{
+    const F=fam(N);if(!F)return;const id=t.code;
    if(id===N.code){
     F.S.forEach(c=>A("sx",c));F.gp.forEach((d,c)=>A("gp",c));F.am.forEach(c=>A("am",c));F.kh.forEach(c=>A("kh",c));F.un3.forEach(c=>A("un3",c));F.nie.forEach((d,c)=>A("nie",c))}
    const dj=F.D.get(id);
@@ -1766,8 +1678,8 @@ applyFL();
   const seen=new Set([t.code,...old.M,...old.fathers,...old.sibs,...old.ks]),out={};
   const take=k=>{out[k]=[...R[k]].filter(c=>!seen.has(c));out[k].forEach(c=>seen.add(c))};
   ["sx","gp","am","kh","un3","gk","nie"].forEach(take);
-  return{...old,sibs:[...old.sibs,...out.sx],gp:out.gp,am:out.am,kh:out.kh,un3:out.un3,gk:out.gk,nie:out.nie,ex:LB.map(([k,l])=>[l,out[k]])}};
- milkLn=function(A,B){
+  return{...old,sibs:[...old.sibs,...out.sx],gp:out.gp,am:out.am,kh:out.kh,un3:out.un3,gk:out.gk,nie:out.nie,ex:LB.map(([k,l])=>[l,out[k]])}}
+  milkLn=function(A,B){
   const h=ml0(A,B);if(h)return h;
   const r=milkRel(A),f=x=>x.sex==="F",c=B.code,has=k=>(r[k]||[]).includes(c);let t="",b="";
   if(has("gp")){t=(f(B)?"جدة":"جد")+" بالرضاعة";b=(f(A)?"حفيدة":"حفيد")+" بالرضاعة"}
@@ -1859,11 +1771,13 @@ applyFL();
   const H=P[k[0]],S=P[k[1]];if(!H||!S)return fn();
   const hm=H.milk,sm=S.milk,hs=new Set(hm||[]);
   H.milk=[];S.milk=(sm||[]).filter(w=>!hs.has(w)&&w!==H.mother);
-  try{return fn()}finally{H.milk=hm;S.milk=sm}};
- milkRel=function(t){
+  const st=MCH.st;MCH.st=1;
+  try{return fn()}finally{MCH.st=st;H.milk=hm;S.milk=sm}};
+ const mrMemo=t=>mcGet("o",t,()=>{
   const k=pair();if(!k||!t)return mr(t);
   const o=neutral(()=>mr(t));
-  return{...o,ad:t.code===k[0]?[k[1]]:t.code===k[1]?[k[0]]:[]}};
+  return{...o,ad:t.code===k[0]?[k[1]]:t.code===k[1]?[k[0]]:[]}});
+ milkRel=t=>MCH.st?mr(t):mrMemo(t);
  MSK.mahramSet=function(t){
   const k=pair(),e=neutral(()=>mh.call(MSK,t));
   if(k&&t&&k.includes(t.code))e.add(t.code===k[0]?k[1]:k[0]);
@@ -1881,6 +1795,123 @@ applyFL();
   return g};
 })();
 </script>
+<script>
+/* أي رسم جديد يفرّغ الذاكرة المؤقتة */
+(function(){const r=render;render=function(){mcBump();return r.apply(this,arguments)}})();
+</script>
+<style id="final-css">
+/* المتوفون: رمادي بحدود منقطة في كل الأنماط، والنقاط الثلاث تبقى ملونة حسب الجنس */
+html body .nd.dd.dd{filter:none!important;border-style:dashed!important;border-color:#8b9097!important;border-top-color:#8b9097!important;background:linear-gradient(120deg,#4b5159,#363b41)!important}
+html body .nd.dd.dd .nm b{color:#e5e7eb!important}
+html body .nd.dd.dd .ui small{color:#cbd0d6!important}
+:root[data-theme="light"] body .nd.dd.dd{background:linear-gradient(120deg,#f1f2f4,#dcdfe3)!important}
+:root[data-theme="light"] body .nd.dd.dd .nm b{color:#5f6670!important}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]) body .nd.dd.dd{background:linear-gradient(120deg,#f1f2f4,#dcdfe3)!important}:root:not([data-theme="dark"]) body .nd.dd.dd .nm b{color:#5f6670!important}}
+html body .nd.M .dt{color:#3b82f6!important}
+html body .nd.F .dt{color:#ec4899!important}
+</style>
 <style id="v8-css">body.hide-sp .nd .sp2{display:none!important}</style>
+<style id="v9-css">
+/* النقاط الثلاث: أكبر وأوضح */
+html body.cs-cl .nd .dt{width:38px;height:38px;left:5px;border-radius:50%;background:var(--card)!important;border:2px solid currentColor!important;font-size:24px;line-height:1;box-shadow:0 1px 5px #0003;color:#374151!important}
+html body.cs-cl .nd.M .dt{color:#1d4ed8!important}
+html body.cs-cl .nd.F .dt{color:#be185d!important}
+html body.cs-cl .nd.dd .dt{color:#4b5563!important}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) html body.cs-cl .nd .dt{background:#fff!important}}
+:root[data-theme="dark"] html body.cs-cl .nd .dt{background:#fff!important}
+/* قريباً */
+.soonb{display:inline-block;background:var(--cr);color:var(--tx);border:1px solid #e8c547;border-radius:99px;padding:1px 9px;font-size:11px;font-weight:700;margin-inline-start:6px;vertical-align:middle}
+/* إخفاء/إظهار الأزرار الجانبية */
+#zb .zx{color:var(--mu);padding:3px 2px!important;font-size:9px!important;line-height:1.2}
+body.zb-off #zb{display:none!important}
+#zbs{display:none;position:fixed;left:8px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--card);border:1px solid var(--ln);border-radius:99px;padding:8px 14px;font-size:12px;font-weight:700;box-shadow:0 2px 10px #0003;cursor:pointer}
+body.zb-off #zbs.on{display:block}
+/* الإرشادات السريعة */
+#qg{position:fixed;inset:0;z-index:180;background:#0007;display:flex;align-items:flex-end;justify-content:center;direction:rtl}
+#qg[hidden]{display:none}
+#qg .qb{background:var(--card);color:var(--tx);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:88%;overflow:auto}
+#qg h2{margin:0 0 4px;font-size:19px}
+#qg .qs{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--ln)}
+#qg .qs:last-of-type{border:0}
+#qg .qi{font-size:24px;line-height:1.2;min-width:34px;text-align:center}
+#qg .qs b{display:block;margin-bottom:2px}
+#qg .qs span{color:var(--mu);font-size:13.5px;line-height:1.6}
+</style>
+<script id="v9-js">
+/* ===== أخبار العائلة (قريباً) ===== */
+function newsSoon(){scr("أخبار العائلة",'<div class="cd" style="text-align:center;padding:36px 12px"><div style="font-size:46px">📰</div><b style="font-size:20px;display:block;margin-top:10px">قريباً ⏳</b><div class="mu" style="margin-top:8px">مساحة لأخبار العائلة ومناسباتها. نعمل عليها وتصلكم قريباً بإذن الله.</div></div>')}
+
+/* ===== شريط التكبير: إخفاء / إظهار ===== */
+function zbSet(off){document.body.classList.toggle("zb-off",!!off);try{localStorage.setItem("zbh",off?"1":"")}catch(e){}}
+function zbToggle(){zbSet(!document.body.classList.contains("zb-off"));toast(document.body.classList.contains("zb-off")?"تم إخفاء الأزرار الجانبية":"تم إظهار الأزرار الجانبية")}
+try{if(localStorage.getItem("zbh"))document.body.classList.add("zb-off")}catch(e){}
+function zbDecor(){
+ let r=document.getElementById("zbs");
+ if(!r){r=document.createElement("button");r.id="zbs";r.textContent="⚙ الأزرار";r.title="إظهار أزرار التكبير والتصغير";r.onclick=()=>zbSet(0);document.body.appendChild(r)}
+ const z=document.getElementById("zb");r.classList.toggle("on",!!z);
+ if(z&&!z.querySelector(".zx")){const b=document.createElement("button");b.className="zx";b.innerHTML="✕<br>إخفاء";b.title="إخفاء الأزرار الجانبية";b.onclick=()=>zbSet(1);z.appendChild(b)}
+}
+
+/* ===== ملء الشاشة وتثبيت التطبيق ===== */
+let DEFI=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFI=e});
+const isApp=()=>{try{return matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true}catch(e){return false}};
+function fsGo(){try{if(document.fullscreenElement){document.exitFullscreen()}else{document.documentElement.requestFullscreen({navigationUI:"hide"}).catch(()=>toast("المتصفح لم يسمح بملء الشاشة"))}}catch(e){toast("المتصفح لا يدعم ملء الشاشة")}}
+function pwaGo(){if(DEFI){DEFI.prompt();DEFI=null}}
+function fsSheet(){
+ const can=!!document.fullscreenEnabled,app=isApp();
+ scr("ملء الشاشة وتثبيت التطبيق",
+  (app?'<div class="cd"><b>✓ تستخدم التطبيق الآن بشاشة كاملة</b></div>':"")+
+  '<div class="cd">'+(can?'<button class="btn" onclick="fsGo()">⛶ ملء الشاشة الآن</button>':"")+(DEFI?'<div style="height:8px"></div><button class="btn o" onclick="pwaGo()">⬇ تثبيت كتطبيق</button>':"")+
+  (!can&&!DEFI&&!app?'<div class="mu">متصفحك لا يفتح ملء الشاشة من داخل الصفحة، استخدم الإضافة للشاشة الرئيسية بالأسفل.</div>':"")+'</div>'+
+  '<div class="cd"><h3>لتظهر الشجرة بدون شريط المتصفح</h3>'+
+  '<div class="li"><span><b>آيفون (Safari)</b><br><small class="mu">اضغط زر المشاركة ⬆️ ثم «إضافة إلى الشاشة الرئيسية»</small></span></div>'+
+  '<div class="li"><span><b>أندرويد (Chrome)</b><br><small class="mu">اضغط القائمة ⋮ ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»</small></span></div>'+
+  '<div class="mu" style="margin-top:8px">بعدها افتحه من الأيقونة على شاشتك، وسيظهر كتطبيق كامل.</div></div>')}
+
+/* ===== إرشادات الاستخدام السريعة ===== */
+const QG=[
+ ["👆","اضغط على أي اسم","تظهر بيانات الشخص وأقاربه، ويصير مركز الشجرة."],
+ ["⋮","النقاط الثلاث بجانب الاسم","قائمة الخيارات: عرض، تعديل، إضافة ابن أو زوج أو والد، ترتيب الأبناء، حذف."],
+ ["🖐","تحرّك في الشجرة","اسحب بإصبعك، وكبّر وصغّر من الأزرار الجانبية. يمكنك إخفاءها بزر ✕ وإظهارها بزر ⚙ الأزرار."],
+ ["🔍","ابحث عن أي فرد","اضغط أيقونة البحث واكتب الاسم للوصول إليه مباشرة."],
+ ["☰","القائمة","فيها صلة الرحم وحاسبة القرابة والإحصائيات وتصدير الشجرة كصورة والإعدادات."],
+ ["‹ ›","رجوع وتقدم","الشريط السفلي يعيدك للأشخاص الذين فتحتهم قبل قليل."],
+ ["⛶","ملء الشاشة","من القائمة ← «ملء الشاشة وتثبيت التطبيق» ليظهر بدون شريط المتصفح."]];
+function qGuide(auto){
+ let g=document.getElementById("qg");if(!g){g=document.createElement("div");g.id="qg";g.hidden=true;document.body.appendChild(g)}
+ g.innerHTML='<div class="qb"><h2>طريقة الاستخدام 💡</h2><div class="mu" style="margin-bottom:6px">'+(auto?"مرحباً بك! هذه أهم الأشياء في دقيقة واحدة:":"أهم ما تحتاجه في دقيقة واحدة:")+'</div>'+
+  QG.map(q=>'<div class="qs"><div class="qi">'+q[0]+'</div><div><b>'+q[1]+'</b><span>'+q[2]+'</span></div></div>').join("")+
+  '<div style="height:10px"></div><button class="btn" onclick="qgClose()">فهمت، ابدأ</button><div style="height:8px"></div><button class="btn o" onclick="qgClose();helpSheet()">جولة تفصيلية بكل المزايا</button></div>';
+ g.hidden=false}
+function qgClose(){const g=document.getElementById("qg");if(g)g.hidden=true;try{localStorage.setItem("qg9","1")}catch(e){}}
+let QGD=false;
+function qgAuto(){if(QGD)return;let seen=false;try{seen=!!localStorage.getItem("qg9")}catch(e){}
+ if(seen){QGD=true;return}
+ if(loaded&&tab==="tree"&&$("wel").hidden&&Object.keys(P).length){QGD=true;setTimeout(()=>{if($("wel").hidden)qGuide(1)},900)}}
+
+/* ===== صلة الرحم: حفظ سحابي حتى تبقى العلامات مع نفس الاسم من أي جهاز ===== */
+let RSU=null,RSM=null,RSL=0,RSF=0;
+const rcK=k=>k.slice(ME.length+1).replace("|","_"),rlK=c=>ME+"|"+c.replace("_","|");
+function rahmFail(){if(!RSF){RSF=1;toast("تعذّر حفظ صلة الرحم على السحابة، سيبقى محفوظاً في هذا المتصفح فقط")}}
+function rahmPush(){
+ if(!DB||!ME)return;
+ const all=rld(),o={};Object.keys(all).forEach(k=>{if(k.indexOf(ME+"|")===0&&all[k]&&Object.keys(all[k]).length)o[rcK(k)]=all[k]});
+ RSL=Date.now();
+ try{Promise.resolve(DB.doc("meta/rahm_"+ME).set(o)).catch(rahmFail)}catch(e){rahmFail()}}
+function rahmSync(){
+ if(!DB||!ME||RSM===ME)return;RSM=ME;RSU&&RSU();let first=true;
+ try{RSU=DB.doc("meta/rahm_"+ME).onSnapshot(s=>{try{
+  if(Date.now()-RSL<2500)return;
+  const v=(s&&typeof s.data==="function"?s.data():s)||{},ks=Object.keys(v),all=rld();
+  if(!ks.length){if(first){first=false;if(Object.keys(all).some(k=>k.indexOf(ME+"|")===0))rahmPush()}return}
+  first=false;
+  Object.keys(all).forEach(k=>{if(k.indexOf(ME+"|")===0)delete all[k]});
+  ks.forEach(c=>{if(v[c]&&typeof v[c]==="object")all[rlK(c)]=v[c]});
+  rsv(all);
+  const e=$("scr");if(e&&!e.hidden&&e.textContent.includes("تمّت صلة"))rahmDraw();
+ }catch(e){}},()=>{})}catch(e){}}
+
+(function(){const r=render;render=function(){const v=r.apply(this,arguments);try{zbDecor()}catch(e){}try{rahmSync()}catch(e){}try{qgAuto()}catch(e){}return v}})();
+</script>
 </body>
 </html>
