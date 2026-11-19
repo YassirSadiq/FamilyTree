@@ -808,7 +808,7 @@ function remask(){if(!RAW)return;PM=maskView(RAW);P=PM}
 function extraCards(p){let h="";const mp=ME&&P[ME];
  if(mp&&p.code!==ME&&p.sex==="F"&&mp.sex!=="F"){const m=MSK.mahramSet(mp).has(p.code);h+=`<div class="cd"><b>المحرمية</b><div style="margin-top:6px;font-weight:700;color:${m?"var(--g)":"#dc2626"}">${m?"محرم لك":"غير محرم لك"}</div></div>`}
  const m=milkRel(p),r=[];m.M.length&&r.push("الأم بالرضاعة: "+m.M.map(x=>E(P[x].name)).join("، "));m.fathers.length&&r.push("الأب بالرضاعة: "+m.fathers.map(x=>E(P[x].name)).join("، "));m.sibs.length&&r.push("إخوة بالرضاعة: "+m.sibs.map(x=>E(P[x].name)).join("، "));m.ks.length&&r.push("أبناء بالرضاعة: "+m.ks.map(x=>E(P[x].name)).join("، "));(m.ex||[]).forEach(([l,c])=>c.length&&r.push(l+": "+c.map(x=>E(P[x].name)).join("، ")));
- if(r.length)h+=`<div class="cd"><b>🍼 الرضاعة</b>${r.map(x=>`<div class="mu" style="margin-top:6px">${x}</div>`).join("")}<div class="mu" style="margin-top:10px;font-size:12px">الرضاعة تثبت المحرمية فقط، ولا توارث ولا نفقة بها.</div></div>`;return h}
+ if(r.length)h+=`<div class="cd"><b>🍼 الرضاعة</b>${r.map(x=>`<div class="mu" style="margin-top:6px">${x}</div>`).join("")}<div class="mu" style="margin-top:10px;font-size:12px">الرضاعة تثبت المحرمية فقط، ولا توارث ولا نفقة بها.</div>${m.sibs.length||m.M.length?`<button class="btn o" style="margin-top:10px" onclick="mkCancel('${p.code}')">إلغاء رابط الرضاعة</button>`:""}</div>`;return h}
 const HM=["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
 function hijriNow(){try{const f=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn",{year:"numeric",month:"numeric",day:"numeric"}).formatToParts(new Date()),g=t=>+(f.find(x=>x.type===t)||{}).value;const y=g("year"),m=g("month");if(y&&m)return{y,m}}catch(e){}const d=new Date(),n=(d-new Date(622,6,16))/864e5/354.367;return{y:Math.floor(n)+1,m:Math.min(12,Math.floor((n%1)*12)+1)}}
 const RS={top:"w",mon:0,half:0,y:0};
@@ -1049,12 +1049,12 @@ async function saveSp(c){const ms=document.querySelector("input[name=ms]:checked
   await put(c,{...P[c],spouses:[...new Set([...P[c].spouses,o])],div:ms==="d"?[...new Set([...P[c].div,o])]:P[c].div});
   if(P[o])await put(o,{...P[o],spouses:[...new Set([...P[o].spouses,c])],div:ms==="d"?[...new Set([...(P[o].div||[]),c])]:(P[o].div||[]),dead:P[o].dead||ms==="x"});
   cl();spRefresh(c);toast("تمت الإضافة",1);
-  const fe=P[c].sex==="F",orph=Object.values(P).filter(k=>k.code!==o&&(fe?(k.mother===c&&!k.father):(k.father===c&&!k.mother)));
+  const fe=P[c].sex==="F",orph=Object.values(P).filter(k=>k.code!==o&&(fe?k.mother===c:k.father===c));
   if(orph.length)setTimeout(()=>linkKids(c,o,orph,on),250)}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 /* ربط أبناء بدون أب/أم بالزوج/الزوجة الجديد */
 let LK=null;
 function linkKids(c,o,L,on){LK={c,o};const fe=P[c]&&P[c].sex==="F",w=fe?"الأب":"الأم";
- sheet(`<h2>ربط الأبناء بـ ${E(on)}<button class="ic" onclick="cl()">✕</button></h2><div class="mu" style="margin-bottom:8px">هؤلاء أبناء ${E(P[c].name)} مسجّلون بدون ${w}. اختر من تريد ربطه بـ ${E(on)} ليصير ${w}.</div>${L.map(k=>`<label class="opt"><input type="checkbox" class="lkc" value="${k.code}" checked>${E(k.name)}</label>`).join("")}<div class="row"><button class="btn" onclick="linkSave()">ربط المحددين</button><button class="btn o" onclick="cl()">تخطي</button></div>`)}
+ sheet(`<h2>ربط الأبناء بـ ${E(on)}<button class="ic" onclick="cl()">✕</button></h2><div class="mu" style="margin-bottom:8px">هؤلاء أبناء ${E(P[c].name)}. اختر من تريد ربطه بـ ${E(on)} ليصير ${w}.</div>${L.map(k=>{const cur=P[fe?k.father:k.mother],has=!!cur;return`<label class="opt"><input type="checkbox" class="lkc" value="${k.code}"${has?"":" checked"}><span>${E(k.name)}${has?`<small class="mu" style="display:block">${w} الحالي: ${E(cur.name)} (يتغيّر إذا حددته)</small>`:""}</span></label>`}).join("")}<div class="row"><button class="btn" onclick="linkSave()">ربط المحددين</button><button class="btn o" onclick="cl()">تخطي</button></div>`)}
 async function linkSave(){const ids=[...document.querySelectorAll(".lkc:checked")].map(x=>x.value);if(!LK||!ids.length){cl();return}
  const fe=P[LK.c]&&P[LK.c].sex==="F";try{for(const k of ids){if(P[k])await put(k,{...P[k],[fe?"father":"mother"]:LK.o})}cl();toast("تم ربط "+ids.length+" من الأبناء",1)}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 
@@ -1065,7 +1065,7 @@ function parBody(c,k){const p=P[c],o=k==="F"?P[p.father]:P[p.mother],cand=o?o.sp
  const first=uq.length===1?uq[0].code:"";
  return(uq.length?`<label>اختر ${nm} من ${k==="F"?"زوجات الأب":"أزواج الأم"}</label>${uq.map(x=>`<label class="opt"><input type="radio" name="pc" value="${x.code}"${x.code===first?" checked":""}>${E(x.name)}</label>`).join("")}<label class="opt"><input type="radio" name="pc" value="new"${first?"":""}>${nm} أخرى (جديدة)</label>`:`<input type="hidden" name="pc" value="new">`)
  +`<div id="pnw"><label>${uq.length?"اسم "+nm+" الجديد"+(k==="F"?"ة":""):"اسم "+nm}</label><input id="pn1" placeholder="الاسم" onfocus="var r=document.querySelector('input[name=pc][value=new]');if(r&&r.type==='radio')r.checked=true"></div>`
- +(sb.length?`<label class="opt"><input type="checkbox" id="pall" checked>ربط نفس ${nm} بإخوته أيضاً (${sb.length})</label>`:"")}
+ +(sb.length?`<label>اختر من إخوته تبي تربطه بنفس ${nm} (${sb.length})</label>${sb.map(x=>`<label class="opt"><input type="checkbox" class="psb" value="${x.code}" checked>${E(x.name)}</label>`).join("")}`:"")}
 function parT(k){PK=k;$("pk1").className=k==="M"?"on":"";$("pk2").className=k==="F"?"on":"";$("pbody").innerHTML=parBody(PC,k)}
 function addPar(c){const p=P[c];if(p.father&&p.mother)return toast("الأب والأم مسجّلان بالفعل");PC=c;PK=p.father?"F":"M";
  const tabs=(!p.father&&!p.mother)?`<div class="tabs"><span id="pk1" class="${PK==="M"?"on":""}" onclick="parT('M')">الأب</span><span id="pk2" class="${PK==="F"?"on":""}" onclick="parT('F')">الأم</span></div>`:`<div class="mu" style="margin:6px 0">إضافة ${PK==="F"?"الأم":"الأب"}</div><span id="pk1"></span><span id="pk2"></span>`;
@@ -1074,7 +1074,7 @@ async function savePar(c){const p=P[c],k=PK,fld=k==="M"?"father":"mother";if(p[f
  const ch=document.querySelector("input[name=pc]:checked")||document.querySelector("input[name=pc][type=hidden]"),v=ch?ch.value:"new",ot=k==="M"?p.mother:p.father;
  try{let o;if(v&&v!=="new"){o=v}else{const n=$("pn1").value.trim();if(!n)return toast(k==="F"?"اكتب اسم الأم أو اختر من القائمة":"اكتب اسم الأب أو اختر من القائمة");
    o=gen();await put(o,mk({name:n,sex:k,spouses:ot&&P[ot]?[ot]:[]}));if(ot&&P[ot])await put(ot,{...P[ot],spouses:[...new Set([...P[ot].spouses,o])]})}
-  const T=[c];if($("pall")&&$("pall").checked)parSibs(c,k).forEach(x=>T.push(x.code));
+  const T=[c];document.querySelectorAll(".psb:checked").forEach(x=>{if(P[x.value]&&!T.includes(x.value))T.push(x.value)});
   for(const t of T)await put(t,{...P[t],[fld]:o});
   cl();toast("تمت الإضافة",1)}catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
 
@@ -2300,5 +2300,29 @@ function setCardSize(k,v){
 })();
 </script>
 <style id="adop-css">.nd .dt{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}</style>
+<script id="mkcancel-js">
+/* إلغاء الإخوان بالرضاعة (أو الأم بالرضاعة) من بطاقة 🍼 الرضاعة */
+function mkCancel(c){const p=P[c];if(!p)return;const m=milkRel(p),bt=(x,t,f)=>`<button class="btn r" style="width:auto;padding:6px 14px;font-size:13px" onclick="${f}">${t}</button>`;
+ const sb=(m.sibs||[]).filter(x=>P[x]),mm=(m.M||[]).filter(x=>P[x]);
+ sheet(`<h2>إلغاء الرضاعة<button class="ic" onclick="cl()">✕</button></h2><div class="mu" style="margin-bottom:8px">${E(p.name)}</div>`
+  +(sb.length?`<div class="cd"><b>إخوة وأخوات بالرضاعة</b>${sb.map(x=>`<div class="li" style="cursor:default"><span>${E(full(x))}</span>${bt(x,"إلغاء",`mkCutSib('${c}','${x}')`)}</div>`).join("")}</div>`:"")
+  +(mm.length?`<div class="cd"><b>الأم بالرضاعة</b><div class="mu" style="font-size:12px;margin:4px 0">إزالتها تلغي الأخوة بالرضاعة الناتجة عنها كلها.</div>${mm.map(x=>`<div class="li" style="cursor:default"><span>${E(full(x))}</span>${bt(x,"إزالة",`mkCutMom('${c}','${x}')`)}</div>`).join("")}</div>`:"")
+  +(!sb.length&&!mm.length?'<div class="cd mu">لا توجد رضاعة مسجلة.</div>':""))}
+async function mkSave(list){for(const [k,d] of list){if(JSON.stringify(d)!==JSON.stringify(P[k]))await put(k,d)}}
+async function mkCutSib(a,b){const A=P[a],B=P[b];if(!A||!B)return;if(!confirm("إلغاء الأخوة بالرضاعة بين "+A.name+" و"+B.name+"؟"))return;
+ try{const nA={...A,milk:[...(A.milk||[])]},nB={...B,milk:[...(B.milk||[])]},sh=nB.milk.filter(w=>nA.milk.includes(w));
+  nB.milk=nB.milk.filter(w=>!sh.includes(w));
+  if(B.mother)nA.milk=nA.milk.filter(w=>w!==B.mother);
+  if(A.mother)nB.milk=nB.milk.filter(w=>w!==A.mother);
+  if(nA.ms)nA.ms=nA.ms.filter(x=>x!==b);if(nB.ms)nB.ms=nB.ms.filter(x=>x!==a);
+  await mkSave([[a,nA],[b,nB]]);
+  setTimeout(()=>{let still=false;try{still=(milkRel(P[a]).sibs||[]).includes(b)}catch(e){}
+   if(still){toast("حذفت الرابط المباشر، لكن ما زالت بينهما قرابة رضاعة عبر أم أو أب بالرضاعة آخر. ألغِ الأم بالرضاعة من نفس القائمة.");mkCancel(a)}
+   else{cl();toast("تم إلغاء الأخوة بالرضاعة",1)}},500)}
+ catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
+async function mkCutMom(a,w){const A=P[a],W=P[w];if(!A||!W)return;if(!confirm("إزالة "+W.name+" كأم بالرضاعة لـ "+A.name+"؟"))return;
+ try{await mkSave([[a,{...A,milk:(A.milk||[]).filter(x=>x!==w)}]]);setTimeout(()=>{cl();toast("تم إلغاء الأم بالرضاعة",1)},300)}
+ catch(e){toast("ما قدرت أحفظ: "+(e.message||e))}}
+</script>
 </body>
 </html>
