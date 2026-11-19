@@ -321,7 +321,7 @@ function treeHTML(){
   else{const r=dir==="ltr";x1=r?a.l+CW:a.l;y1=a.t+CH/2;x2=r?b.l:b.l+CW;y2=b.t+CH/2;d=`M${x1} ${y1}C${(x1+x2)/2} ${y1} ${(x1+x2)/2} ${y2} ${x2} ${y2}`}
   sv+=`<path d="${d}" fill="none" stroke="#9ca3af" stroke-width="1.5"/>`});
  out.forEach(o=>{const p=P[o.c],q=pos[o.c],sps=p.spouses.map(s=>P[s]).filter(s=>s&&!s.masked&&!p.div.includes(s.code)).slice(0,2).map(s=>s.name).join(" و "),fm=p.sex==="F",tr=p.tier|0;
-  nd+=`<div data-i="${E(badge(p))}" class="nd ${p.sex}${sel===o.c?" sel":""}${p.dead?" dd":""}${tr?" t"+tr:""}" style="left:${q.l}px;top:${q.t}px" onclick="person('${o.c}')">${tr?'<span class="cr">👑</span>':""}<span class="dt" onclick="event.stopPropagation();cardMenu('${o.c}')">⋮</span><div class="nm"><span class="ui">${I.user}<small>${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</small></span><b style="font-size:${nmFs(p.name,[16,18,20][tr]||16)}px">${E(p.name)}${sps?` <small class="sp2">💍 ${E(sps)}</small>`:""}${p.dead?`<small class="sp">${fm?"متوفاة":"متوفى"}</small>`:""}</b></div><div class="bl"><span class="bt" onclick="event.stopPropagation();person('${o.c}')">${I.eye} عرض</span><span class="bt" onclick="event.stopPropagation();addMenu('${o.c}')">＋ إضافة</span><span class="bt" onclick="event.stopPropagation();edit('${o.c}')">✎ تعديل</span></div></div>`});
+  nd+=`<div data-i="${E(badge(p))}" class="nd ${p.sex}${sel===o.c?" sel":""}${p.dead?" dd":""}${tr?" t"+tr:""}" style="left:${q.l}px;top:${q.t}px" onclick="person('${o.c}')">${tr?'<span class="cr">👑</span>':""}<span class="dt" onclick="event.stopPropagation();cardMenu('${o.c}')">⋮</span><div class="nm"><span class="ui">${I.user}<small>${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</small></span><b style="font-size:${nmFs(p.name,[16,18,20][tr]||16)}px">${E(p.name)}${sps?` <small class="sp2">💍 ${E(sps)}</small>`:""}${p.dead?`<small class="sp" style="font-size:${nmFs(p.name,[16,18,20][tr]||16)-2}px">ادعو ${fm?"لها":"له"} بالرحمة</small>`:""}</b></div><div class="bl"><span class="bt" onclick="event.stopPropagation();person('${o.c}')">${I.eye} عرض</span><span class="bt" onclick="event.stopPropagation();addMenu('${o.c}')">＋ إضافة</span><span class="bt" onclick="event.stopPropagation();edit('${o.c}')">✎ تعديل</span></div></div>`});
  return{h:`<div id="tc" style="width:${W*zoom}px;height:${H*zoom}px"><div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform:scale(${zoom});transform-origin:0 0"><svg width="${W}" height="${H}">${sv}</svg>${nd}</div></div>`,W,H}
 }
 
@@ -383,7 +383,8 @@ function sibGroups(p){const g={full:[],pa:[],ma:[],mk:[]},seen=new Set([p.code])
 function sibCard(G){if(!G.length)return"";return`<div class="cd"><b>الإخوة والأخوات</b>${G.map(g=>`<div style="margin-top:12px"><span class="bg" style="margin:0;background:none;border:1.5px ${g.ds} var(${g.v});color:var(${g.v})">${g.t} · ${g.items.length}</span>${g.items.map(k=>`<div class="li" style="border-inline-start:4px ${g.ds} var(${g.v});padding-inline-start:10px;margin-top:6px" onclick="detail('${k.code}')"><span>${E(k.name)}<small class="mu" style="margin-inline-start:6px">${sibTag(k,g.s)}</small></span><span>‹</span></div>`).join("")}</div>`).join("")}</div>`}
 const ORDN=["غير محدد","الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","الثالث عشر","الرابع عشر","الخامس عشر"];
 const tierOrd=p=>`<label>حجم الاسم في الشجرة (الكبير يظهر معه 👑)</label><select id="et">${["عادي","كبير","أكبر ⭐"].map((t,i)=>`<option value="${i}"${(p.tier|0)===i?" selected":""}>${t}</option>`).join("")}</select><label>ترتيبه بين إخوته</label><select id="eo">${ORDN.map((t,i)=>`<option value="${i}"${(p.ord|0)===i?" selected":""}>${t}</option>`).join("")}<option value="99"${p.ord===99?" selected":""}>الأخير</option></select>`;
-function detail(c){const p=P[c];if(!p)return;sel=c;const f=P[p.father||p.mother],SG=sibGroups(p),sb=SG.flatMap(g=>g.items.map(k=>({k,g}))),ch=kids(c);
+function detail(c){const p=P[c];if(!p)return;sel=c;
+ if(p.masked)return scr(E(p.name),`<div class="cd"><span class="bg ${p.dead?"dead":"alive"}">${p.dead?"متوفاة":p.unk?"غير معروف":"حي"}</span><span class="bg sx">أنثى</span></div>${mhdCard()}`,`<button class="btn o" onclick="home();tab='tree';egoGo('${c}')">عرض في الشجرة</button>`);const f=P[p.father||p.mother],SG=sibGroups(p),sb=SG.flatMap(g=>g.items.map(k=>({k,g}))),ch=kids(c);
  scr(E(p.name),`<div class="cd"><span class="bg ${p.dead?"dead":"alive"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="bg sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="mu">#${c}</span><div class="mu" style="margin-top:8px">الاسم الكامل</div><b style="font-size:17px">${E(full(c))}</b>${extraInfo(p)}</div>${contactCard(p)}${sumCard(c)}${miniCard(c)}${sibCard(SG)}${extraCards(p)}${ch.length?`<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center"><b>الأبناء</b>${ch.length>1?`<button class="btn o" style="width:auto;padding:6px 12px" onclick="ordScr('${c}')">ترتيب الأبناء</button>`:""}</div>${ch.map(k=>`<div class="li" onclick="detail('${k.code}')">${E(k.name)}<span>‹</span></div>`).join("")}</div>`:""}`,`<button class="btn" onclick="edit('${c}')">تعديل البيانات</button><button class="btn o" onclick="home();tab='tree';egoGo('${c}')">عرض في الشجرة</button>`)}
 function et(n){[0,1,2].forEach(i=>{$("q"+i).hidden=i!==n;$("e"+i).className=i===n?"on":""})}
 function edit(c,dr){const p={...P[c],...(dr||{})},st=p.dead?1:p.unk?2:0;
@@ -420,7 +421,8 @@ function render(){$("bf").style.display=tab==="tree"?"flex":"none";$("b1").class
 let hist=[],hi=-1;
 
 function person(c,k){const p=P[c];if(!p)return;sel=c;if(!k&&hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}let n=1,q=p;while((q=P[q.father||q.mother])&&n<30)n++;
- sheet(`<h2><span>معلومات الفرد</span><button class="ic">♡</button></h2><div class="cd"><b style="font-size:20px">${E(p.name)}</b><div class="chs"><span class="ch ${p.dead?"dd":"al"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="ch sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="ch">مستوى ${n}</span><span class="ch">#${c}</span></div><div class="nr2"><span class="mu">الاسم</span><span>${E(full(c))}</span></div>${extraInfo(p)}</div>${contactCard(p)}<div class="cd two"><span class="g" onclick="cl();tab='tree';egoGo('${c}')">👁 عرض في الشجرة</span><span onclick="cl();detail('${c}')">ⓘ عرض التفاصيل</span></div>`);render()}
+ sheet(`<h2><span>معلومات الفرد</span><button class="ic">♡</button></h2><div class="cd"><b style="font-size:20px">${E(p.name)}</b><div class="chs"><span class="ch ${p.dead?"dd":"al"}">${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</span><span class="ch sx">${p.sex==="F"?"أنثى":"ذكر"}</span><span class="ch">مستوى ${n}</span><span class="ch">#${c}</span></div>${p.masked?"":`<div class="nr2"><span class="mu">الاسم</span><span>${E(full(c))}</span></div>${extraInfo(p)}`}</div>${p.masked?mhdCard():contactCard(p)}<div class="cd two"><span class="g" onclick="cl();tab='tree';egoGo('${c}')">👁 عرض في الشجرة</span>${p.masked?"":`<span onclick="cl();detail('${c}')">ⓘ عرض التفاصيل</span>`}</div>`);render()}
+const mhdCard=()=>'<div class="cd" style="border-color:#dc2626"><b style="color:#dc2626">🔒 غير محرم لك</b><div class="mu" style="margin-top:8px;line-height:1.8">هذه المرأة ليست من محارمك، ولذلك لا يمكنك الاطلاع على بياناتها.</div></div>';
 function kr(){const i=++rid,d=document.createElement("div");d.className="kr";d.dataset.i=i;d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><span class="mu" style="font-size:12px">فرد #${i}</span><button class="ic" onclick="this.closest('.kr').remove()">🗑</button></div><input class="kn" placeholder="الاسم" style="margin:8px 0 6px"><div class="row">${radio("x"+i,"M","ذكر",1)}${radio("x"+i,"F","أنثى")}</div><div class="row">${radio("s"+i,"0","حي",1)}${radio("s"+i,"1","متوفى")}${radio("s"+i,"2","غير معروف")}</div>`;$("kl").appendChild(d)}
 (()=>{const L=f=>`url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><g transform='${f}'><path d='M0 200C40 150 75 105 125 35' fill='none' stroke='#6b8f5a' stroke-width='1.6'/><g fill='#8fbd78' opacity='.7'>${[[22,168,-40],[50,140,-60],[78,112,-70],[104,78,-80],[126,46,-95],[38,178,-15],[70,148,-25],[98,116,-35],[122,84,-45]].map(a=>`<ellipse cx='${a[0]}' cy='${a[1]}' rx='24' ry='8' transform='rotate(${a[2]} ${a[0]} ${a[1]})'/>`).join("")}</g></g></svg>`)}")`,s=document.documentElement.style;s.setProperty("--l1",L(""));s.setProperty("--l2",L("translate(200 0) scale(-1 1)"));s.setProperty("--l3",L("translate(0 200) scale(1 -1)"));s.setProperty("--l4",L("translate(200 200) scale(-1 -1)"))})();
 const ico=d=>`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16803c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -728,7 +730,7 @@ function egoLayout(e){
 function egoCard(t,rt,ct,mini){const p=t.p,tr=p.tier|0,fm=p.sex==="F",cen=t.kind==="c";
  const sps=p.spouses.map(s=>P[s]).filter(s=>s&&!s.masked&&!p.div.includes(s.code)).slice(0,2).map(s=>s.name).join(" و ");
  const fs=cen?[19,21,23][tr]:[16,18,20][tr]||16;
- return `<div data-i="${E(badge(p))}" class="nd en ${p.sex}${sel===p.code?" sel":""}${p.dead?" dd":""}${tr?" t"+tr:""}${t.dash||p.dead&&false?" hs":""}${cen?" cen":""}${mini?" mini":""}${t.col==="--s"?" sps":""}" style="left:${t.x!==undefined?t.x-t.w/2+rt:t.cx-t.w/2+rt}px;top:${t.y+ct}px;width:${t.w}px;height:${t.h}px" onclick="egoGo('${p.code}')">${t.tag?`<span class="tg2" style="background:${COL[t.col]}">${E(t.tag)}</span>`:""}${tr?'<span class="cr">👑</span>':""}<span class="dt" onclick="event.stopPropagation();cardMenu('${p.code}')">⋮</span><div class="nm"><span class="ui">${I.user}<small>${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</small></span><b style="font-size:${nmFs(p.name,fs)}px">${E(p.name)}${sps?` <small class="sp2">💍 ${E(sps)}</small>`:""}${p.dead?`<small class="sp">${fm?"متوفاة":"متوفى"}</small>`:""}</b></div>${mini?"":`<div class="bl"><span class="bt" onclick="event.stopPropagation();person('${p.code}')">${I.eye} عرض</span><span class="bt" onclick="event.stopPropagation();addMenu('${p.code}')">＋ إضافة</span><span class="bt" onclick="event.stopPropagation();edit('${p.code}')">✎ تعديل</span></div>`}</div>`}
+ return `<div data-i="${E(badge(p))}" class="nd en ${p.sex}${sel===p.code?" sel":""}${p.dead?" dd":""}${tr?" t"+tr:""}${t.dash||p.dead&&false?" hs":""}${cen?" cen":""}${mini?" mini":""}${t.col==="--s"?" sps":""}" style="left:${t.x!==undefined?t.x-t.w/2+rt:t.cx-t.w/2+rt}px;top:${t.y+ct}px;width:${t.w}px;height:${t.h}px" onclick="egoGo('${p.code}')">${t.tag?`<span class="tg2" style="background:${COL[t.col]}">${E(t.tag)}</span>`:""}${tr?'<span class="cr">👑</span>':""}<span class="dt" onclick="event.stopPropagation();cardMenu('${p.code}')">⋮</span><div class="nm"><span class="ui">${I.user}<small>${p.dead?(p.sex==="F"?"متوفاة":"متوفى"):p.unk?"غير معروف":"حي"}</small></span><b style="font-size:${nmFs(p.name,fs)}px">${E(p.name)}${sps?` <small class="sp2">💍 ${E(sps)}</small>`:""}${p.dead?`<small class="sp" style="font-size:${nmFs(p.name,fs)-2}px">ادعو ${fm?"لها":"له"} بالرحمة</small>`:""}</b></div>${mini?"":`<div class="bl"><span class="bt" onclick="event.stopPropagation();person('${p.code}')">${I.eye} عرض</span><span class="bt" onclick="event.stopPropagation();addMenu('${p.code}')">＋ إضافة</span><span class="bt" onclick="event.stopPropagation();edit('${p.code}')">✎ تعديل</span></div>`}</div>`}
 
 function egoHTML(){
  const e=P[egoOf]?egoOf:P[sel]?sel:defEgo();egoOf=e;
@@ -743,11 +745,11 @@ function egoHTML(){
  const W=G.W,H=G.H;
  return{h:`<div id="tc" style="width:${W*zoom}px;height:${H*zoom}px"><div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform:scale(${zoom});transform-origin:0 0"><svg width="${W}" height="${H}">${defs}${ln}${pl}</svg>${cards}${note}</div></div>`,W,H}}
 
-function egoZoom(c){try{const w=$("tw")||$("main");if(!w||!P[c]||w.clientWidth<60)return 0;const G=egoLayout(c),r=w.getBoundingClientRect(),nv=$("bf"),bt=nv?Math.min(r.bottom,nv.getBoundingClientRect().top):r.bottom,ah=bt-r.top-14;if(ah<60)return 0;return Math.max(.1,Math.min(.85,(w.clientWidth-14)/G.W,ah/G.H))}catch(e){return 0}}
+function egoZoom(c,fm){try{const w=$("tw")||$("main");if(!w||!P[c]||w.clientWidth<60)return 0;const G=egoLayout(c),r=w.getBoundingClientRect(),nv=$("bf"),bt=nv?Math.min(r.bottom,nv.getBoundingClientRect().top):r.bottom,ah=bt-r.top-14;if(ah<60)return 0;if(!fm)return Math.max(.12,Math.min(.6,.27*w.clientWidth/411));return Math.max(.08,Math.min(.85,(w.clientWidth-14)/G.W,ah/G.H)*.88)}catch(e){return 0}}
 function egoGo(c){if(!P[c])return;zoom=egoZoom(c)||Math.min(zoom,.6);egoOf=c;sel=c;if(hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}egoC=true;render()}
 function toggleMap(){tmode=tmode==="ego"?"full":"ego";if(tmode==="ego")egoC=true;render()}
 function go2(d){const n=hi+d;if(n<0||n>=hist.length)return;hi=n;if(tmode==="ego"&&tab==="tree"){egoOf=sel=hist[n];egoC=true;render()}else person(hist[n],1)}
-function fit(W){const w=$("tw");zoom=(tmode==="ego"&&egoZoom(egoOf))||Math.min(1,Math.max(.05,w.clientWidth/W));egoC=true;render()}
+function fit(W){const w=$("tw");zoom=(tmode==="ego"&&egoZoom(egoOf,1))||Math.min(1,Math.max(.05,w.clientWidth/W));egoC=true;render()}
 const r5=render;render=()=>{r5();
  if(tab!=="tree")return;
  const z=$("zb");
@@ -836,13 +838,13 @@ function rahmGo(c){home();tab="tree";tmode="ego";egoGo(c)}
 let ME=null,welDone=false;try{ME=localStorage.getItem("me")||null}catch(e){}
 const nzW=t=>(t||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").trim();
 function findMeW(t){const e=nzW(t).split(/\s+/).filter(h=>h&&!["بن","ابن","بنت"].includes(h));if(!e.length)return[];const PP=RAW||P,u=Object.values(PP).filter(h=>nzW(h.name)===e[0]),r=u.map(h=>{let v=0,d=h;for(const i of e.slice(1)){const n=PP[d.father];if(n&&nzW(n.name)===i)v++,d=n;else break}return{c:h,s:v}}),m=Math.max(-1,...r.map(x=>x.s));return r.filter(x=>x.s===m).map(x=>x.c)}
-function showWel(){const w=$("wel");w.hidden=false;w.innerHTML=`<div class="bx"><h2>صلة الرحم..</h2><p>أجرٌ ممتد وبَرَكَةٌ في العمر والرزق.</p><div class="ay">«مَنْ أَحَبَّ أَنْ يُبْسَطَ لَهُ فِي رِزْقِهِ، وَيُنْسَأَ لَهُ فِي أَثَرِهِ، فَلْيَصِلْ رَحِمَهُ»<br><small>(متفق عليه)</small></div><input id="wn" placeholder="اكتب اسمك (مثال: ياسر صادق)" autocomplete="off" onkeydown="if(event.key==='Enter')welGo()"><div class="er" id="we"></div><div id="wl"></div><button class="wb main" onclick="welGo()">دخول إلى شجرتي</button></div>`;setTimeout(()=>{const i=$("wn");i&&i.focus()},60)}
+function showWel(){const w=$("wel");w.hidden=false;w.innerHTML=`<div class="bx"><h2>صلة الرحم..</h2><p>أجرٌ ممتد وبَرَكَةٌ في العمر والرزق.</p><div class="ay">«مَنْ أَحَبَّ أَنْ يُبْسَطَ لَهُ فِي رِزْقِهِ، وَيُنْسَأَ لَهُ فِي أَثَرِهِ، فَلْيَصِلْ رَحِمَهُ»<br><small>(متفق عليه)</small></div><input id="wn" placeholder="اكتب اسمك (مثال: ياسر صادق)" autocomplete="off" onkeydown="if(event.key==='Enter')welGo()"><div class="er" id="we"></div><div id="wl"></div><button class="wb main" onclick="welGo()">دخول إلى شجرتي</button>${document.fullscreenEnabled?'<button class="wb" onclick="fsGo()">⛶ ملء الشاشة</button>':""}</div>`;setTimeout(()=>{const i=$("wn");i&&i.focus()},60)}
 /* في شاشة الترحيب نعرض الأسماء الحقيقية (قبل التمويه) ليتعرّف الشخص على نفسه */
 function fullRaw(c){const u=P;P=RAW||P;try{return full(c)}finally{P=u}}
 function welGo(){const v=$("wn").value,r=findMeW(v);if(!v.trim()){$("we").textContent="اكتب اسمك أولاً";return}if(!r.length){$("we").textContent="ما لقيت الاسم، جرّب الاسم الأول فقط أو الاسم الثنائي";return}if(r.length===1)return welPick(r[0].code);$("we").textContent="اختر أنت:";$("wl").innerHTML=r.slice(0,12).map(p=>`<button class="wb" onclick="welPick('${p.code}')">${E(fullRaw(p.code))}</button>`).join("")}
 function welPick(c){ME=c;try{localStorage.setItem("me",c)}catch(e){}welDone=true;$("wel").hidden=true;remask();tab="tree";tmode="ego";egoOf=c;sel=c;egoC=true;egoZ=false;if(typeof hist!=="undefined"&&hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}render()}
 
-const rW=render;render=()=>{if(P!==PM){RAW=P;PM=maskView(RAW);P=PM}rW();egoBanner();if(!welDone&&loaded&&Object.keys(P).length){welDone=true;showWel()}};
+const rW=render;render=()=>{if(P!==PM){RAW=P;PM=maskView(RAW);P=PM}rW();egoBanner();if(!welDone&&loaded&&Object.keys(P).length){welDone=true;if(ME&&(RAW||P)[ME]){welPick(ME)}else showWel()}};
 
 render();
 /* ===== مزايا من الفيديو: ملخص الذرية، الإحصائيات، شجرة مصغرة، ترتيب الأبناء، تصدير ===== */
@@ -1502,22 +1504,32 @@ async function awPosterCanvas(c,hideF){
  const real=all.map(n=>n.p),N=all.length-1,maxD=Math.max(...all.map(n=>n.d));
  const cm=document.createElement("canvas").getContext("2d");cm.direction="rtl";
  let li=0;const L=root.lv;
- root.kids.forEach(function ang(n){if(!n.kids.length){n.a=A0+(li+.5)/L*(A1-A0);li++}else{n.kids.forEach(ang);n.a=(n.kids[0].a+n.kids[n.kids.length-1].a)/2}});
+ {const K1=root.kids.length;let ac=A0;const sec=(n,a,b)=>{n.a=(a+b)/2;let u=a;n.kids.forEach(h=>{const ww=(b-a)*h.lv/n.lv;sec(h,u,u+ww);u+=ww})};
+  root.kids.forEach(k=>{const w=(.45*k.lv/L+.55/K1)*(A1-A0);sec(k,ac,ac+w);ac+=w})}
  const byD=[];all.forEach(n=>{if(n.d>0)(byD[n.d]||(byD[n.d]=[])).push(n)});
  /* الأجداد (سلسلة النسب) */
  const anc=[];{const sn=new Set([c]);let p=P[u.father]||P[u.mother];while(p&&!sn.has(p.code)&&anc.length<40){sn.add(p.code);anc.push(p);p=P[p.father]||P[p.mother]}}
- let fs,rad,Rmax,medR,S1=1;
+ let fs,rad,Rmax,medR,S1=1,S2=1;
  /* حساب أنصاف الأقطار؛ sc = تكبير أوراق الجيل الأول (أبناء الفرد) إذا كانت الصورة غير مزدحمة */
- const lay=(fv,sc)=>{cm.font=`700 ${fv}px ${FF}`;all.forEach(n=>{n.sc=n.d===1?sc:1;n.w=(cm.measureText(n.p.name).width+fv*1.3)*n.sc});
-  const th0=fv*1.75,lm=byD.map(a=>a?Math.max(...a.map(n=>n.w)):0),mR=Math.max(62,fv*3.1),rd=[0];
+ const lay=(fv,sc,sc2)=>{cm.font=`700 ${fv}px ${FF}`;all.forEach(n=>{n.sc=n.d===1?sc:n.d===2?(sc2||1):1;n.w=(cm.measureText(n.p.name).width+fv*1.3)*n.sc});
+  const th0=fv*1.75,lm=byD.map(a=>a?Math.max(...a.map(n=>n.w)):0),mR=Math.max(62,fv*3.1),rd=[0],bw=[0],kk=[0],gp=d=>lm[d]/2+lm[d+1]/2+fv*.8;
   for(let d=1;d<=maxD;d++){
-   let r=d===1?mR*1.8+lm[1]/2:rd[d-1]+lm[d-1]/2+lm[d]/2+fv*.8;
-   const a=byD[d].map(n=>n.a).sort((x,y)=>x-y);let md=1e9;for(let i=1;i<a.length;i++)md=Math.min(md,a[i]-a[i-1]);
-   if(a.length>1&&md>1e-6)r=Math.max(r,th0*(d===1?sc:1)*1.08/md);rd[d]=r}
-  return{mR,rd,R:rd[maxD]+byD[maxD].reduce((m,n)=>Math.max(m,n.w),0)/2}};
- let L0;for(fs=N>600?16:N>300?21:N>150?27:N>60?34:42;;fs--){L0=lay(fs,1);if(L0.R<=3400||fs<=11)break}
- {const Rlim=Math.min(3400,Math.max(L0.R*1.12,720));for(const c of[2.4,2.1,1.8,1.55,1.35,1.2]){if(lay(fs,c).R<=Rlim){S1=c;break}}}
- {const LF=lay(fs,S1);medR=LF.mR;rad=LF.rd;Rmax=LF.R}
+   const arr=byD[d].slice().sort((x,y)=>x.a-y.a),thd=th0*(d===1?sc:d===2?(sc2||1):1);
+   const r0=d===1?mR*1.8+lm[1]/2:rd[d-1]+bw[d-1]+lm[d-1]/2+lm[d]/2+fv*.8;
+   let md=1e9;for(let i=1;i<arr.length;i++)md=Math.min(md,arr[i].a-arr[i-1].a);
+   const need=arr.length>1&&md>1e-6?thd*1.08/md:0,step=lm[d]*.6;
+   let bk=1,br0=Math.max(r0,need),be=br0;
+   if(d>=2)for(let k=2;k<=3;k++){const rk=Math.max(r0,need/k),e=rk+(k-1)*step;if(e<be-1){be=e;bk=k;br0=rk}}
+   rd[d]=br0;kk[d]=bk;bw[d]=(bk-1)*step;
+   arr.forEach((n,i)=>{n.row=bk>1?i%bk:0;n.stp=step})}
+  const Rt0=rd[maxD]+bw[maxD]+lm[maxD]/2,fr=[0,.3,.5,.68,.8,.88];
+  for(let d=maxD-1;d>=1;d--){const lim=rd[d+1]-bw[d]-gp(d),want=Math.min((fr[d]||.9)*Rt0,lim);if(want>rd[d])rd[d]=want}
+  let R=0;all.forEach(n=>{if(!n.d)return;n.r=rd[n.d]+n.row*n.stp;R=Math.max(R,n.r+n.w/2)});
+  return{mR,rd,R}};
+ let L0;for(fs=N>600?18:N>300?23:N>150?29:N>60?35:42;;fs--){L0=lay(fs,1,1);if(L0.R<=3400||fs<=11)break}
+ {const Rlim=Math.min(3400,Math.max(L0.R*1.12,720));for(const c of[2.4,2.1,1.8,1.55,1.35,1.2]){if(lay(fs,c,1).R<=Rlim){S1=c;break}}
+  const Rl2=Math.min(3600,Math.max(L0.R*1.3,780));for(const c of[2,1.75,1.5,1.3,1.15]){if(lay(fs,S1,c).R<=Rl2){S2=c;break}}}
+ {const LF=lay(fs,S1,S2);medR=LF.mR;rad=LF.rd;Rmax=LF.R}
  const th=fs*1.75;
  const tw=Math.max(medR*1.35,Math.min(.04*Rmax,medR*1.6)),rows=Math.min(anc.length,26),secMin=Math.max(58,fs*2.2),secMax=Math.max(secMin,tw*1.5),rootZ=Math.max(150,tw*1.2);
  /* الجذع أقسام: الفرد في الأعلى (الأصغر)، وكل جد أكبر من اللي فوقه، وأكبرها الجد الأقدم في الأسفل */
@@ -1562,14 +1574,14 @@ async function awPosterCanvas(c,hideF){
     dx=3*m*m*(c1x-X0)+6*m*t*(c2x-c1x)+3*t*t*(X1-c2x),dy=3*m*m*(c1y-Y0)+6*m*t*(c2y-c1y)+3*t*t*(Y1-c2y),l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l,w=(w0+(w1-w0)*(t*t*(3-2*t)))/2;
     Lp.push([px+nx*w,py+ny*w]);Rp.push([px-nx*w,py-ny*w])}
    x.beginPath();Lp.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));for(let i=NN;i>=0;i--)x.lineTo(Rp[i][0],Rp[i][1]);x.closePath();x.fill()};
-  const br=(n,pr,pa)=>{const r=rad[n.d],[X0,Y0]=pos(pr,pa),[X1,Y1]=pos(r,n.a),rm=pr+(r-pr)*.5,[c1x,c1y]=pos(rm,pa),[c2x,c2y]=pos(rm,n.a);
+  const br=(n,pr,pa)=>{const r=n.r,[X0,Y0]=pos(pr,pa),[X1,Y1]=pos(r,n.a),rm=pr+(r-pr)*.5,[c1x,c1y]=pos(rm,pa),[c2x,c2y]=pos(rm,n.a);
    const w0=WT(n.d-1),w1=n.kids.length?WT(n.d):Math.max(2.4,Math.min(WT(n.d),th*(n.sc||1)*.3));
    x.fillStyle=n.d%2?"#6d2a44":"#7b3550";taper(X0,Y0,c1x,c1y,c2x,c2y,X1,Y1,w0,Math.min(w0,w1));n.kids.forEach(k=>br(k,r,n.a))};
   root.kids.forEach(k=>br(k,0,PI/2))}
  /* الأوراق */
  const COL=["","#2ea6e6","#f3aa8c","#c8d332","#a6c43c"];
  {x.textAlign="center";x.font=`700 ${fs}px ${FF}`;
-  all.forEach(n=>{if(!n.d)return;const[X,Y]=pos(rad[n.d],n.a),sc=n.sc||1,len=n.w+fs*.4*sc,hh=th*sc/2;let a=-n.a;
+  all.forEach(n=>{if(!n.d)return;const[X,Y]=pos(n.r,n.a),sc=n.sc||1,len=n.w+fs*.4*sc,hh=th*sc/2;let a=-n.a;
    x.save();x.translate(X,Y);x.rotate(a);const fill=n.d===1?COL[1]:n.d===2?COL[2]:COL[3+(n.d%2)];
    x.beginPath();x.moveTo(-len/2,0);x.quadraticCurveTo(-len*.1,-hh*1.95,len/2,0);x.quadraticCurveTo(-len*.1,hh*1.95,-len/2,0);x.closePath();x.fillStyle=fill;x.fill();x.strokeStyle="rgba(60,50,10,.45)";x.lineWidth=1.2;x.stroke();
    x.restore();
@@ -1795,7 +1807,7 @@ function ctrEl(el){const w=document.getElementById("tw");if(!w||!el)return;
 function cardOf(c){const w=document.getElementById("tw");if(!w)return null;
  return w.querySelector(".nd.cen")&&tmode==="ego"?w.querySelector(".nd.cen"):[...w.querySelectorAll(".nd")].find(e=>(e.getAttribute("onclick")||"").includes("'"+c+"'"))}
 function focusOn(c){if(!P[c])return;
- FOC=true;PEND=c;zoom=(tmode==="ego"&&Math.max(egoZoom(c),.42))||Math.max(zoom,FZOOM);sel=c;egoOf=c;egoZ=true;egoC=true;
+ FOC=true;PEND=c;zoom=(tmode==="ego"&&egoZoom(c))||Math.max(zoom,FZOOM);sel=c;egoOf=c;egoZ=true;egoC=true;
  if(hist[hi]!==c){hist=hist.slice(0,hi+1);hist.push(c);hi++}
  render()}
 egoGo=function(c){focusOn(c)};
@@ -1822,12 +1834,11 @@ document.addEventListener("click",ev=>{
 {const t0=toggleMap;toggleMap=function(){FOC=false;return t0.apply(this,arguments)}}
 {const p0=person;person=function(c,a){stk.push(0);try{return p0.call(this,c,a)}finally{stk.pop()}}}
 
-const FZC=[1.15,1.3,1.45,1.6,1.75,1.9,2.05,2.2,2.35,2.5],FZU=[1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9];
-let FL=1;
-try{const s=localStorage.getItem("fzl");if(s!==null)FL=Math.min(9,Math.max(0,parseInt(s)||0));
- else{const f=parseFloat(localStorage.getItem("fz"));if(f)FL=FZC.reduce((b,x,i)=>Math.abs(x-f)<Math.abs(FZC[b]-f)?i:b,0)}}catch(e){}
+const FZC=[1.9,2.05,2.2,2.35,2.5,2.65,2.8,2.95,3.1,3.25],FZU=[1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4];
+let FL=0;
+try{const s2=localStorage.getItem("fzl2"),s=localStorage.getItem("fzl");if(s2!==null)FL=Math.min(9,Math.max(0,parseInt(s2)||0));else if(s!==null)FL=Math.min(9,Math.max(0,(parseInt(s)||0)-5))}catch(e){}
 function applyFL(){const s=document.documentElement.style;s.setProperty("--cz",FZC[FL]);s.setProperty("--uz",FZU[FL]);s.setProperty("--pz",String(Math.max(.9,FZU[FL]*.65)));
- try{localStorage.setItem("fzl",FL);localStorage.setItem("fz",FZC[FL])}catch(e){}
+ try{localStorage.setItem("fzl2",FL);localStorage.setItem("fz",FZC[FL])}catch(e){}
  const b=document.getElementById("fzb");if(b)b.innerHTML="<b>Aa</b>"+"الخط "+(FL+1)+"/10"}
 function fzNext(){FL=(FL+1)%10;applyFL();toast("حجم الخط: "+(FL+1)+" من 10",1)}
 applyFL();
@@ -2210,5 +2221,24 @@ function rahmSync(){
 #hd .av{width:auto!important;height:auto!important;border-radius:0!important;background:none!important;border:0!important;color:var(--tx)!important;padding:4px 8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #hd .av svg{width:24px;height:24px}
 </style>
+<script id="lock-js">
+/* قفل الاسم: يدخل تلقائياً بالاسم المحفوظ، ولتغييره: ضغطة مطولة (ثانيتين) على شعار الشجرة داخل القائمة ☰ */
+(function(){let t=null;
+ const stop=()=>{clearTimeout(t);t=null};
+ document.addEventListener("pointerdown",e=>{const l=e.target.closest&&e.target.closest(".avl");if(!l)return;stop();
+  t=setTimeout(()=>{t=null;if(!confirm("تغيير الاسم المسجّل على هذا الجهاز؟"))return;
+   try{localStorage.removeItem("me")}catch(x){}ME=null;welDone=false;try{remask()}catch(x){}cl();stk=[];drawScr();showWel()},2000)});
+ ["pointerup","pointercancel","contextmenu"].forEach(n=>document.addEventListener(n,stop));
+})();
+</script>
+<style id="dead-css">
+/* المتوفى: الدائرة رقم الترتيب بلون محايد، والثلاث نقاط فقط ملوّنة (أزرق للذكر / وردي للأنثى) */
+html body .nd.dd.dd::after,html body.cs-cl .nd.dd.dd::after,html body.cs-old .nd.dd.dd::after,html body .nd.dd.dd.F::after,html body.cs-cl .nd.dd.dd.F::after,html body.cs-old .nd.dd.dd.F::after{background:#d1d5db!important;color:#374151!important}
+html body.cs-cl .nd.dd .dt{border-color:#8b9097!important}
+html body.cs-cl .nd.M.dd .dt{color:#2563eb!important}
+html body.cs-cl .nd.F.dd .dt{color:#db2777!important}
+html body .nd.dd .sp{font-weight:400!important;color:inherit!important;opacity:.9}
+</style>
+<style id="nopinch-css">#tw,#tw *{touch-action:pan-x pan-y!important}</style>
 </body>
 </html>
