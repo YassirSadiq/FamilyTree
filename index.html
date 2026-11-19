@@ -893,17 +893,17 @@ function stats(){statsScr(null)}
 let NMA=[],NMT="dup",NMD=[],NMO=false;
 const nmNorm=t=>(t||"").replace(/[\u064B-\u065F\u0670\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
 function nmGroups(){const g={};NMA.forEach(k=>{const p=P[k];if(!p)return;const n=(p.name||"").trim();if(!n)return;const key=nmNorm(n);(g[key]||(g[key]={name:n,codes:[]})).codes.push(k)});return Object.values(g)}
-function nmInner(){if(!NMO){const n=nmGroups().filter(x=>x.codes.length>1).length;return`<b style="font-size:17px">الأسماء</b><div class="mu" style="margin:6px 0 10px">${n} اسم مكرر في هذا النطاق</div><button class="btn o" onclick="nmShow(1)">🔍 استكشاف الأسماء المكررة</button>`}
- const G=nmGroups(),cmp=(a,b)=>a.name.localeCompare(b.name,"ar");
+function nmInner(){const n=nmGroups().filter(x=>x.codes.length>1).length;return`<b style="font-size:17px">الأسماء</b><div class="mu" style="margin:6px 0 10px">${n} اسم مكرر في هذا النطاق</div><button class="btn o" onclick="nmScr()">🔍 استكشاف الأسماء المكررة</button>`}
+function nmBody(){const G=nmGroups(),cmp=(a,b)=>a.name.localeCompare(b.name,"ar");
  NMD=G.filter(x=>x.codes.length>1).sort((a,b)=>b.codes.length-a.codes.length||cmp(a,b));
  const U=G.filter(x=>x.codes.length===1).sort(cmp),dup=NMT==="dup";
  const tab=(t,l)=>`<span class="${NMT===t?"on":""}" onclick="nmTab('${t}')">${l}</span>`;
  let body;
  if(dup)body=NMD.length?`<div class="mu" style="font-size:12px;margin:8px 0 2px">اضغط على الاسم لعرض كل من يحمله في هذا النطاق.</div>`+NMD.map((x,i)=>`<div class="li" onclick="nmOpen(${i})"><span style="color:var(--g);font-weight:700">${E(x.name)}</span><b>${x.codes.length}</b></div>`).join(""):'<div class="mu" style="margin-top:8px">لا توجد أسماء مكررة</div>';
  else body=U.length?`<div class="mu" style="font-size:12px;margin:8px 0 2px">عدد الأسماء غير المكررة: ${U.length}</div>`+U.map(x=>`<div class="li" onclick="detail('${x.codes[0]}')"><span>${E(x.name)}</span><span>‹</span></div>`).join(""):'<div class="mu" style="margin-top:8px">لا توجد أسماء غير مكررة</div>';
- return`<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">الأسماء</b><button class="ic" style="font-size:13px;color:var(--mu)" onclick="nmShow(0)">إخفاء ▲</button></div><div class="tabs" style="flex-wrap:wrap;overflow:visible;margin:10px 0 0">${tab("dup","الأسماء المكررة ("+NMD.length+")")}${tab("uni","الأسماء غير المكررة ("+U.length+")")}</div>${body}`}
-function nmShow(v){NMO=!!v;if(v)NMT="dup";const e=$("nmcard");if(e)e.innerHTML=nmInner()}
-function nmTab(t){NMT=t;const e=$("nmcard");if(e)e.innerHTML=nmInner()}
+ return`<div class="cd"><div class="tabs" style="flex-wrap:wrap;overflow:visible;margin:0">${tab("dup","الأسماء المكررة ("+NMD.length+")")}${tab("uni","الأسماء غير المكررة ("+U.length+")")}</div>${body}</div>`}
+function nmScr(){NMT="dup";scr("الأسماء",nmBody())}
+function nmTab(t){NMT=t;const s=stk[stk.length-1];if(s){s.b=nmBody();drawScr()}}
 function nmOpen(i){const x=NMD[i];if(!x)return;scr(x.name+" ("+x.codes.length+")",`<div class="mu" style="margin:6px 4px">عدد من يحمل الاسم «${E(x.name)}»: ${x.codes.length}</div><div class="cd">${x.codes.map(k=>`<div class="li" onclick="detail('${k}')"><span>${E(STR?chainName(k):full(k))}</span><span>‹</span></div>`).join("")}</div>`)}
 
 /* شجرة مصغرة */
