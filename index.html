@@ -329,7 +329,7 @@ function treeHTML(){
 
 document.querySelectorAll("#nav .tb button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
 $("bs").onclick=()=>{sheet('<h2>بحث<button class="ic" onclick="cl()">✕</button></h2><input id="q" placeholder="ابحث بالاسم…" oninput="sr(this.value)"><div id="rs"></div>');sr("")};
-function sr(v){$("rs").innerHTML=Object.values(P).filter(p=>p.name.includes(v.trim())).slice(0,30).map(p=>`<div class="li" onclick="person('${p.code}')"><span>${E(full(p.code))}</span><span class="mu" dir="ltr">#${p.code}</span></div>`).join("")||'<div class="mu" style="padding:12px">لا نتائج</div>'}
+function sr(v){$("rs").innerHTML=Object.values(P).filter(p=>NM(p,v.trim())).sort(rk(v.trim())).slice(0,30).map(p=>`<div class="li" onclick="person('${p.code}')"><span>${E(full(p.code))}</span><span class="mu" dir="ltr">#${p.code}</span></div>`).join("")||'<div class="mu" style="padding:12px">لا نتائج</div>'}
 
 function share(){const u=location.href;try{navigator.share?navigator.share({url:u,title:"شجرة العائلة"}):navigator.clipboard.writeText(u).then(()=>toast("تم نسخ الرابط"))}catch(e){toast("تعذر المشاركة")}}
 
@@ -357,7 +357,10 @@ const TRB_HINT="فضلاً أضف اسم القبيلة عند أي أحد في 
 const tkey=t=>(t||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/[يى]/g,"ي").replace(/ة/g,"ه").trim();
 const TRIBE_INFO=[];
 function tribeList(){const m={};Object.values(P).forEach(p=>{const t=[inh(p.code,"clan"),inh(p.code,"lname")||famN()].filter(Boolean).join(" ").trim();if(t)m[t]=(m[t]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])}
-function aboutFam(){FAMBACK=false;TRB=tribeList();const L=TRB,one=L.length===1,
+function aboutFam(){FAMBACK=false;TRB=tribeList();
+ /* يفتح نبذة قبيلة الشخص المسجّل مباشرة (المشرف يشوف القائمة كاملة) */
+ try{if(ME&&P[ME]&&!(window.isAdm&&window.isAdm())){const mt=[inh(ME,"clan"),inh(ME,"lname")||famN()].filter(Boolean).join(" ").trim(),ix=TRB.findIndex(x=>x[0]===mt);if(ix>=0){tribeInfo(ix);return}}}catch(e){}
+ const L=TRB,one=L.length===1,
  rows=L.map((x,i)=>`<div class="opt" onclick="tribeInfo(${i})"><b style="flex:1">${E(x[0])}</b><span class="mu">${x[1]} فرد</span></div>`).join(""),
  none=one?`<div class="opt" onclick="document.getElementById('abh').hidden=false"><b style="flex:1">لا توجد قبيلة أخرى بالشجرة</b></div>`:"";
  scr("نبذة عن العائلة",`<div class="cd"><h3>اختر القبيلة</h3><div class="mu">${L.length?"اختر قبيلة لتظهر لك نبذة عنها.":"لا توجد قبيلة مكتوبة في الشجرة بعد."}</div>${rows}${none}</div><div id="abh" class="cd hl"${one?" hidden":""}>${TRB_HINT}</div>`)}
@@ -401,7 +404,7 @@ function pb(k,p,c){const F=k==="f",w=F?"الأب":"الأم",cur=F?p.father:p.mo
 function pRead(){const o={};["f","m"].forEach(k=>{const r=document.querySelector(`input[name=pm${k}]:checked`),y=!!r&&r.value==="y";o[k+"m"]=y?"y":"n";o[k+"c"]=y?(PS[k]||""):"";o[k+"n"]=y?"":((document.getElementById("pn"+k)||{}).value||"").trim()});return o}
 function pmode(k){const y=document.querySelector(`input[name=pm${k}]:checked`).value==="y";$("pY"+k).hidden=!y;$("pN"+k).hidden=y}
 function pFind(k,c,v){const e=$("pl"+k);v=(v||"").trim();if(!v){e.innerHTML="";return}const sx=k==="f"?"M":"F",ks=kids(c).map(x=>x.code);
- const l=Object.values(P).filter(x=>x.code!==c&&!ks.includes(x.code)&&x.sex===sx&&((x.name||"").includes(v)||full(x.code).includes(v))).sort(rk(v)).slice(0,40);
+ const l=Object.values(P).filter(x=>x.code!==c&&!ks.includes(x.code)&&x.sex===sx&&NM(x,v)).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="pPick('${k}','${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function pPick(k,o){PS[k]=o;$("pl"+k).innerHTML="";$("pq"+k).value=P[o].name;$("pc"+k).textContent="المختار: "+full(o)}
 
@@ -492,7 +495,7 @@ EM["\u2B07"]="dl";
 function outline(c,seen,d){seen.add(c);const p=P[c],sp=p.spouses.map(s=>P[s]).filter(Boolean).map(s=>s.name).join("، ");let o="  ".repeat(d)+(d?"└ ":"")+p.name+(p.dead?" (متوفى)":"")+(sp?(p.sex==="F"?" — زوجها: ":" — زوجته: ")+sp:"")+"\n";kids(c).forEach(k=>{if(!seen.has(k.code))o+=outline(k.code,seen,d+1)});return o}
 function nasab(c){const p=P[c];if(!p)return"";const n=[kn(p)+p.name],seen=new Set([c]);let q=p;while(n.length<80){const f=P[q.father||q.mother];if(!f||seen.has(f.code))break;seen.add(f.code);if(bin)n.push(q.sex==="F"?"بنت":"بن");n.push(f.name);q=f}const fx=inh(c,"clan"),fy=inh(c,"lname")||famN();return n.join(" ")+(fx?" "+fx:"")+(fy?" "+fy:"")}
 function setTheme(v){try{localStorage.setItem("theme",v)}catch(e){}if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme")}
-function themeSheet(){let c="auto";try{c=localStorage.getItem("theme")||"auto"}catch(e){}cl();scr("المظهر",`<div class="cd"><h3>مظهر التطبيق</h3>${[["auto","تلقائي (حسب الجهاز)"],["light","فاتح"],["dark","داكن"]].map(x=>`<label class="opt"><input type="radio" name="th" value="${x[0]}"${c===x[0]?" checked":""} onchange="setTheme(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل بطاقات الأسماء</h3>${[["cl","الكلاسيكي (دائرة وثلاث نقاط)"],["new","بأزرار ظاهرة (عرض / إضافة / تعديل)"]].map(x=>`<label class="opt"><input type="radio" name="cs" value="${x[0]}"${(document.body.classList.contains("cs-cl")?"cl":"new")===x[0]?" checked":""} onchange="setCardStyle(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل إطار البطاقة</h3>${[["none","عادي"],["cloud","☁️ سحابة"],["leaf","🍃 ورقة"],["pill","💊 كبسولة"]].map(x=>`<label class="opt"><input type="radio" name="sh" value="${x[0]}"${(((document.body.className.match(/\bsh-(\w+)/)||[])[1])||"none")===x[0]?" checked":""} onchange="setShape(this.value)">${x[1]}</label>`).join("")}</div><div class="cd pkc" data-pk="1"><h3>حجم الخط (من 1 إلى 10)</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="fzv">${FL+1}</span> من 10</div><input type="range" min="1" max="10" step="1" value="${FL+1}" style="width:100%" oninput="FL=parseInt(this.value)-1;applyFL();$('fzv').textContent=this.value"></div><div class="cd pkc" data-pk="1"><h3>حجم البطاقة</h3><div style="font-weight:700;margin-top:6px">العرض: <span id="csvw">${CWn}</span> من 10</div><input id="csrw" type="range" min="1" max="10" step="1" value="${CWn}" style="width:100%" oninput="$('csvw').textContent=this.value;pkSize('w',this.value)" onchange="pkSize('w',this.value,1)"><div style="font-weight:700;margin-top:10px">الطول: <span id="csvh">${CHn}</span> من 10</div><input id="csrh" type="range" min="1" max="10" step="1" value="${CHn}" style="width:100%" oninput="$('csvh').textContent=this.value;pkSize('h',this.value)" onchange="pkSize('h',this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 صغير</span><span>10 كبير</span></div><button class="btn o" style="margin-top:10px" onclick="setCardSize('r')">رجوع للحجم الافتراضي (5 و 5)</button></div><div class="cd"><label class="opt" style="margin:0"><input type="checkbox" ${window.HKH?"checked":""} onchange="hkhSet(this.checked)"><span>كتابة مسمى القرابة مرة واحدة فوق كل مجموعة (الأعمام، العمات، الأخوال، الخالات، الإخوان، الأخوات، إخوة الأجداد) وإخفاؤه من البطاقات. أما «بالرضاعة» و«بالتبني» فتبقى مكتوبة على بطاقاتهم.</span></label></div><div class="cd"><h3>بطاقات الأسماء</h3><label class="opt"><input type="checkbox"${document.body.classList.contains("hide-sp")?" checked":""} onchange="setHideSp(this.checked)">إخفاء اسم الزوج/الزوجة من بطاقات الأسماء</label></div><div class="cd"><h3>الأفراد في الشجرة</h3><label class="opt"><input type="checkbox"${hideF?" checked":""} onchange="setHideF(this.checked)">إخفاء الإناث من الشجرة</label><div class="mu" style="font-size:12px;margin-top:4px">يخفي كل الإناث، وكل من ينتسب للشجرة عن طريق أمه فقط. البيانات تبقى محفوظة كما هي، وترجع تظهر عند إلغاء الخيار.</div></div><div class="cd"><h3>العرض والشاشة</h3>${li("🌳","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("📱","ملء الشاشة وتثبيت التطبيق","fsSheet()","يظهر بدون شريط المتصفح")}<label class="opt"><input type="checkbox"${document.body.classList.contains("zb-off")?"":" checked"} onchange="zbSet(!this.checked)">إظهار أزرار التكبير والتصغير الجانبية</label><label class="opt"><input type="checkbox"${document.body.classList.contains("zn-off")?"":" checked"} onchange="znSet(!this.checked)">إظهار أزرار الرجوع والتقدم</label></div>`)}
+function themeSheet(){let c="auto";try{c=localStorage.getItem("theme")||"auto"}catch(e){}cl();scr("المظهر",`<div class="cd"><h3>مظهر التطبيق</h3>${[["auto","تلقائي (حسب الجهاز)"],["light","فاتح"],["dark","داكن"]].map(x=>`<label class="opt"><input type="radio" name="th" value="${x[0]}"${c===x[0]?" checked":""} onchange="setTheme(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل بطاقات الأسماء</h3>${[["cl","الكلاسيكي (دائرة وثلاث نقاط)"],["new","بأزرار ظاهرة (عرض / إضافة / تعديل)"]].map(x=>`<label class="opt"><input type="radio" name="cs" value="${x[0]}"${(document.body.classList.contains("cs-cl")?"cl":"new")===x[0]?" checked":""} onchange="setCardStyle(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل إطار البطاقة</h3>${[["none","عادي"],["cloud","☁️ سحابة"],["leaf","🍃 ورقة"],["pill","💊 كبسولة"]].map(x=>`<label class="opt"><input type="radio" name="sh" value="${x[0]}"${(((document.body.className.match(/\bsh-(\w+)/)||[])[1])||"none")===x[0]?" checked":""} onchange="setShape(this.value)">${x[1]}</label>`).join("")}</div><div class="cd pkc" data-pk="1"><h3>حجم الخط (من 1 إلى 10)</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="fzv">${FL+1}</span> من 10</div><input type="range" min="1" max="10" step="1" value="${FL+1}" style="width:100%" oninput="FL=parseInt(this.value)-1;applyFL();$('fzv').textContent=this.value"></div><div class="cd pkc" data-pk="1"><h3>حجم البطاقة</h3><div style="font-weight:700;margin-top:6px">العرض: <span id="csvw">${CWn}</span> من 10</div><input id="csrw" type="range" min="1" max="10" step="1" value="${CWn}" style="width:100%" oninput="$('csvw').textContent=this.value;pkSize('w',this.value)" onchange="pkSize('w',this.value,1)"><div style="font-weight:700;margin-top:10px">الطول: <span id="csvh">${CHn}</span> من 10</div><input id="csrh" type="range" min="1" max="10" step="1" value="${CHn}" style="width:100%" oninput="$('csvh').textContent=this.value;pkSize('h',this.value)" onchange="pkSize('h',this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 صغير</span><span>10 كبير</span></div><button class="btn o" style="margin-top:10px" onclick="setCardSize('r')">رجوع للحجم الافتراضي (5 و 5)</button></div><div class="cd"><label class="opt" style="margin:0"><input type="checkbox" ${window.HKH?"checked":""} onchange="hkhSet(this.checked)"><span><b>مسمى القرابة مرة واحدة لكل مجموعة</b><br><span class="mu" style="font-size:12.5px;line-height:1.8">يُكتب «الأعمام» أو «الأخوال» أو «الإخوان» مرة واحدة فوق المجموعة بدل تكراره على كل بطاقة، فتظهر الأسماء أنظف. وتبقى «بالرضاعة» و«بالتبني» مكتوبة على بطاقات أصحابها.</span></span></label></div><div class="cd"><h3>بطاقات الأسماء</h3><label class="opt"><input type="checkbox"${document.body.classList.contains("hide-sp")?" checked":""} onchange="setHideSp(this.checked)">إخفاء اسم الزوج/الزوجة من بطاقات الأسماء</label></div><div class="cd"><h3>الأفراد في الشجرة</h3><label class="opt"><input type="checkbox"${hideF?" checked":""} onchange="setHideF(this.checked)">إخفاء الإناث من الشجرة</label><div class="mu" style="font-size:12px;margin-top:4px">يخفي كل الإناث، وكل من ينتسب للشجرة عن طريق أمه فقط. البيانات تبقى محفوظة كما هي، وترجع تظهر عند إلغاء الخيار.</div></div><div class="cd"><h3>العرض والشاشة</h3>${li("🌳","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("📱","ملء الشاشة وتثبيت التطبيق","fsSheet()","يظهر بدون شريط المتصفح")}<label class="opt"><input type="checkbox"${document.body.classList.contains("zb-off")?"":" checked"} onchange="zbSet(!this.checked)">إظهار أزرار التكبير والتصغير الجانبية</label><label class="opt"><input type="checkbox"${document.body.classList.contains("zn-off")?"":" checked"} onchange="znSet(!this.checked)">إظهار أزرار الرجوع والتقدم</label></div>`)}
 function setHideSp(v){try{localStorage.setItem("hsp",v?"1":"")}catch(e){}document.body.classList.toggle("hide-sp",!!v)}
 try{if(localStorage.getItem("hsp"))document.body.classList.add("hide-sp")}catch(e){}
 function setCardStyle(v){try{localStorage.setItem("cs",v)}catch(e){}document.body.classList.toggle("cs-cl",v!=="new")}
@@ -546,7 +549,7 @@ async function boardCanvas(sc){
 function menu(){sheet(`<h2><span></span><button class="ic" onclick="cl()">✕</button></h2><div class="avw" style="text-align:center"><div class="avl"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="24" width="4" height="12" rx="1.5" fill="#8a5a2b"/><circle cx="20" cy="15" r="9" fill="#2f9e57"/><circle cx="12" cy="21" r="6.5" fill="#3fb86a"/><circle cx="28" cy="21" r="6.5" fill="#3fb86a"/></svg></div><b style="display:block;margin-top:8px">${E(fname())}</b><small class="mu">${Object.keys(P).length} فرد</small></div><div class="mu" style="margin-top:10px">أدوات العائلة</div><div class="cd">${li("📖","نبذة عن العائلة","cl();aboutFam()","نبذة عن القبيلة المسجّلة في الشجرة")}${li("🕌","صلة الرحم","rahmScr()","الأقارب الواجب والمستحب صلتهم")}${li("\u{1F465}","حاسبة القرابة","cl();relCalc()","اعرف صلة القرابة بين أي فردين")}${li("\u{1F558}","سجل التعديلات","logs()","آخر الإضافات والتعديلات والحذف")}${li("\u{1F332}","مشجرة العائلة","cl();orgOpen()","الأب والأم وصلة القرابة بينهما")}${li("\u{1F4CA}","الإحصائيات","cl();stats()","الأجيال وأكثر الأفراد أبناءً")}${li("📰","أخبار العائلة <span class=\"soonb\">قريباً</span>","cl();newsSoon()","مناسبات العائلة وأخبارها")}${(window.myPendCount&&window.myPendCount())?li("⏳","تعديلاتي المنتظرة ("+window.myPendCount()+")","cl();pendSheet()","تعديلات بانتظار موافقة المشرف"):""}</div><div class="mu">التصدير والنسخ</div><div class="cd">${li("📸","تصدير الشجرة إلى صورة","awSheet()","شجرة شخص أو فرد وذريته بدقة عالية")}${li("\u{1F5BC}","تصدير الشجرة إلى لوحة","posterSheet()","شجرة مزخرفة للطباعة والتعليق: الفرد في الجذع وذريته أوراق")}</div><div class="mu">الإعدادات</div><div class="cd">${li("🎨","المظهر","themeSheet()","الألوان وعرض الشجرة وملء الشاشة")}${li("\u{1F4A1}","إرشادات سريعة","cl();qGuide()","طريقة الاستخدام في دقيقة")}${li("📘","دليل الاستخدام","helpSheet()","جولة تعريفية بكل مميزات التطبيق")}</div>`)}
 let RA=null,RB=null;
 function relCalc(){RA=RB=null;scr("حاسبة القرابة",`<div class="cd"><label>الفرد الأول</label><input id="ra" placeholder="ابحث بالاسم" oninput="rp('a',this.value)"><div id="la"></div><label>الفرد الثاني</label><input id="rb" placeholder="ابحث بالاسم" oninput="rp('b',this.value)"><div id="lb"></div></div><div id="rr"></div>`)}
-function rp(w,v){const l=$("l"+w);v=v.trim();if(!v){l.innerHTML="";return}l.innerHTML=Object.values(P).filter(p=>p.name.includes(v)).slice(0,8).map(p=>`<div class="li" onclick="rs('${w}','${p.code}')"><span>${E(full(p.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
+function rp(w,v){const l=$("l"+w);v=v.trim();if(!v){l.innerHTML="";return}l.innerHTML=Object.values(P).filter(p=>NM(p,v)).sort(rk(v)).slice(0,8).map(p=>`<div class="li" onclick="rs('${w}','${p.code}')"><span>${E(full(p.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function rs(w,c){if(w==="a")RA=c;else RB=c;$("r"+w).value=P[c].name;$("l"+w).innerHTML="";rel()}
 function up(c){const m={},q=[[c,0,""]];m[c]={d:0,s:"",k:""};while(q.length){const[x,d,s]=q.shift(),p=P[x];[["F",p.father],["M",p.mother]].forEach(([t,y])=>{if(y&&P[y]&&!m[y]){const s2=d===0?t:s;m[y]={d:d+1,s:s2,k:x};q.push([y,d+1,s2])}})}return m}
 
@@ -746,7 +749,7 @@ function egoHTML(){
  const defs="<defs>"+Object.entries(COL).map(([k,v])=>`<marker id="mk${k.slice(2)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${v}"/></marker>`).join("")+"</defs>";
  const mk=k=>`url(#mk${k.slice(2)})`;
  const ln=G.r.map(c=>`<line x1="${c[0]+rt}" y1="${c[1]+ct}" x2="${c[2]+rt}" y2="${c[3]+ct}" stroke="${COL[c[4]]}" stroke-width="2" opacity=".85"${c[5]?' stroke-dasharray="6 5"':""}${c[6]?` marker-end="${mk(c[4])}"`:""}${c[6]===2?` marker-start="${mk(c[4])}"`:""}/>`).join("");
- const pl=G.h.map(c=>{const x=c.x+rt,b=c.y+ct;if(c.nobox)return`<text x="${x}" y="${b+4}" style="font:700 12px Tajawal,system-ui,sans-serif" fill="${COL[c.col]}" text-anchor="middle">${E(c.text)}</text>`;const tl=c.text.split("\n"),y=Math.max(...tl.map(q=>q.length))*7.2+26,hh=tl.length>1?38:22;return`<rect x="${x-y/2}" y="${b-hh/2}" width="${y}" height="${hh}" rx="11" fill="#fff" stroke="${COL[c.col]}" stroke-dasharray="3 3"/>`+tl.map((q,i)=>`<text x="${x}" y="${b+4+(i-(tl.length-1)/2)*15}" style="font:600 12px Tajawal,system-ui,sans-serif" fill="${COL[c.col]}" text-anchor="middle">${E(q)}</text>`).join("")}).join("");
+ const KP=Math.max(1,(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cz"))||1)*1.4),pl=G.h.map(c=>{const x=c.x+rt,b=c.y+ct;if(c.nobox)return`<text x="${x}" y="${b+4*KP}" style="font:700 ${12*KP}px Tajawal,system-ui,sans-serif" fill="${COL[c.col]}" text-anchor="middle">${E(c.text)}</text>`;const tl=c.text.split("\n"),y=(Math.max(...tl.map(q=>q.length))*7.2+26)*KP,hh=(tl.length>1?38:22)*KP;return`<rect x="${x-y/2}" y="${b-hh/2}" width="${y}" height="${hh}" rx="${11*KP}" fill="#fff" stroke="${COL[c.col]}" stroke-dasharray="3 3"/>`+tl.map((q,i)=>`<text x="${x}" y="${b+4*KP+(i-(tl.length-1)/2)*15*KP}" style="font:600 ${12*KP}px Tajawal,system-ui,sans-serif" fill="${COL[c.col]}" text-anchor="middle">${E(q)}</text>`).join("")}).join("");
  const cards=G.o.map(t=>egoCard(t,rt,ct,false)).join("")+G.Mt.map(t=>egoCard(t,rt,ct,t.d>=2)).join("");
  const note=G.it?`<div class="note" style="left:${G.it.x+rt}px;top:${G.it.y+ct}px;width:${G.vt}px;height:${G.it.h}px"><b>📝 على الهامش (رضاعة / مطلّقات / وفاة)</b>${G.ot.map(t=>`<div>${E(t)}</div>`).join("")}</div>`:"";
  const W=G.W,H=G.H;
@@ -887,7 +890,7 @@ function branchHeads(){return roots().map(r=>({code:r.code,name:r.name,n:descOf(
 function scopeChips(c){const H=branchHeads(),chip=(k,t,on)=>`<span class="${on?"on":""}" onclick="statsScr(${k?"'"+k+"'":"null"},1)">${t}</span>`;
  return`<div class="tabs" style="flex-wrap:wrap;overflow:visible;margin:10px 0 0">${chip("","الشجرة كاملة",!c)}${H.map(h=>chip(h.code,E(h.name)+" ("+h.n+")",c===h.code)).join("")}</div>`}
 function scopeFind(v,cur){const e=$("scl");if(!e)return;v=(v||"").trim();if(!v){e.innerHTML="";return}
- const l=Object.values(P).filter(p=>(p.name||"").includes(v)).slice(0,12);
+ const l=Object.values(P).filter(p=>NM(p,v)).sort(rk(v)).slice(0,12);
  e.innerHTML=l.map(p=>`<div class="li" onclick="statsScr('${p.code}',1)"><span>${E(full(p.code))}</span><span>‹</span></div>`).join("")||'<div class="mu" style="margin-top:8px">لا نتائج</div>'}
 function genScr(d){const l=GEN[d]||[];scr("الجيل "+gname(d),`<div class="mu" style="margin:6px 4px">عدد أفراد الجيل ${gname(d)}: ${l.length}</div><div class="cd">${l.map(k=>`<div class="li" onclick="detail('${k}')"><span>${E(STR?chainName(k):full(k))}</span><span>‹</span></div>`).join("")}</div>`)}
 function stats(){statsScr(null)}
@@ -1041,7 +1044,7 @@ function addSp(c){const p=P[c],f=p.sex==="F",w=f?"زوج":"زوجة";SPN=null;SP
  <div id="s1" hidden><label>ابحث بالاسم</label><input id="sq" placeholder="اكتب جزءاً من الاسم" oninput="spFind(this.value)"><div id="sl"></div><div id="spc" class="mu" style="margin-top:6px"></div></div>
  <label>حالة الزواج</label><div class="row">${radio("ms","m","قائم",1)}${radio("ms","d",f?"مطلّق":"مطلّقة")}${radio("ms","x",f?"متوفى":"متوفاة")}</div><div class="row"><button class="btn" onclick="saveSp('${c}')">إضافة</button></div>`)}
 function spFind(v){const e=$("sl");if(!e)return;v=(v||"").trim();if(!v){e.innerHTML="";return}const p=P[SPC];
- const l=Object.values(P).filter(x=>x.code!==SPC&&!p.spouses.includes(x.code)&&x.sex!==p.sex&&((x.name||"").includes(v)||full(x.code).includes(v))).sort(rk(v)).slice(0,40);
+ const l=Object.values(P).filter(x=>x.code!==SPC&&!p.spouses.includes(x.code)&&x.sex!==p.sex&&NM(x,v)).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="spPick('${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function spPick(o){SPN=o;$("sl").innerHTML="";$("sq").value=P[o].name;$("spc").textContent="تم اختيار: "+full(o)}
 async function saveSp(c){const ms=document.querySelector("input[name=ms]:checked")?.value||"m";
@@ -1211,7 +1214,7 @@ function orgHead(){const all=srt(Object.values(P).slice());if(!all.length)return
 let OZQ=null;
 function orgFocus(){const w=$('orgw'),sv=w&&w.querySelector('svg');if(!sv||!OZQ)return;const z=sv.getAttribute('width')/OZQ[2];w.scrollLeft=OZQ[0]*z-w.clientWidth/2;w.scrollTop=(OZQ[1]+170)*z-w.clientHeight+40}
 const orgRe=()=>{orgDraw();expDraw();if(orgZ===null)orgFocus()};
-function orgFind(v){const e=$("orgl");v=(v||"").trim();if(!e)return;if(!v){e.innerHTML="";return}e.innerHTML=Object.values(P).filter(p=>p.name.includes(v)).slice(0,40).map(p=>`<div class="li" onclick="orgMe('${p.code}')"><span><b>${E(p.name)}</b><br><small class="mu">${E(full(p.code))}</small></span></div>`).join("")||'<div class="mu" style="padding:8px">ما لقيت الاسم</div>'}
+function orgFind(v){const e=$("orgl");v=(v||"").trim();if(!e)return;if(!v){e.innerHTML="";return}e.innerHTML=Object.values(P).filter(p=>NM(p,v)).sort(rk(v)).slice(0,40).map(p=>`<div class="li" onclick="orgMe('${p.code}')"><span><b>${E(p.name)}</b><br><small class="mu">${E(full(p.code))}</small></span></div>`).join("")||'<div class="mu" style="padding:8px">ما لقيت الاسم</div>'}
 function orgMe(v){const c=String(v).split("·").pop().trim();if(P[c]){orgP=c;orgS=null;orgZ=null;try{localStorage.setItem("meP",c)}catch(e){}orgRe()}}
 function orgBody(){const H=orgHead();if(!H.cur)return H.h;const c=H.cur,r=orgSvg(c.rt,c.k2,c.links,c.hl,c.sp,2);OZQ=[r.Z,r.Q,r.TW,r.TH];const z=orgZ||Math.max(.3,Math.min(1,(innerWidth-30)/r.TW));
  return H.h+`<div class="row" style="margin:0 0 8px"><button class="btn o" onclick="orgZm(1.25)">＋</button><button class="btn o" onclick="orgZm(.8)">－</button><button class="btn o" onclick="orgZ=null;orgDraw();orgFocus()">ملاءمة</button></div><div id="orgw" onclick="orgClick(event)" style="overflow:auto;direction:ltr;height:58vh;border:1px solid var(--ln);border-radius:14px;background:var(--bg)"><svg width="${r.TW*z}" height="${r.TH*z}" viewBox="0 0 ${r.TW} ${r.TH}">${r.h}</svg></div>`}
@@ -1307,7 +1310,7 @@ function addSibs(c,k){const p=P[c];cl();rid=0;
 let MP="";
 function mmode(){const y=document.querySelector("input[name=mm]:checked").value==="y";$("mY").hidden=!y;$("kl").hidden=y;$("kmore").hidden=y;mMomUpd()}
 function mFind(c,v){const e=$("ml");v=(v||"").trim();if(!v){e.innerHTML="";return}const p=P[c],mk0=(p.milk||[]).filter(x=>P[x]),mo=mk0.length?mk0:p.mother?[p.mother]:[];
- const l=Object.values(P).filter(x=>x.code!==c&&!mo.includes(x.code)&&!(x.milk||[]).some(y=>mo.includes(y))&&((x.name||"").includes(v)||full(x.code).includes(v))).sort(rk(v)).slice(0,40);
+ const l=Object.values(P).filter(x=>x.code!==c&&!mo.includes(x.code)&&!(x.milk||[]).some(y=>mo.includes(y))&&NM(x,v)).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="mPick('${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function mPick(o){MP=o;$("ml").innerHTML="";$("mq").value=P[o].name;$("mc").textContent="المختار: "+full(o);mMomUpd()}
 let MC="";
@@ -1316,7 +1319,7 @@ function pickBox(id,sx,lb,ex,cb){PB[id]={code:"",sx,ex:ex||[],cb};return `<div c
 function pbY(id){return document.querySelector(`input[name=pb${id}]:checked`).value==="y"}
 function pbMode(id){const y=pbY(id);$("pbY"+id).hidden=!y;$("pbN"+id).hidden=y;if(PB[id].cb)PB[id].cb(y?PB[id].code:"")}
 function pbFind(id,v){const e=$("pbl"+id),b=PB[id];v=(v||"").trim();if(!v){e.innerHTML="";return}
- const l=Object.values(P).filter(x=>x.sex===b.sx&&!b.ex.includes(x.code)&&((x.name||"").includes(v)||full(x.code).includes(v))).sort(rk(v)).slice(0,40);
+ const l=Object.values(P).filter(x=>x.sex===b.sx&&!b.ex.includes(x.code)&&NM(x,v)).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="pbPick('${id}','${x.code}')"><span>${E(full(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function pbPick(id,o){PB[id].code=o;$("pbl"+id).innerHTML="";$("pbq"+id).value=P[o].name;$("pbc"+id).textContent="المختار: "+full(o);if(PB[id].cb)PB[id].cb(o)}
 function pbVal(id){if(pbY(id)){const c=PB[id].code;return P[c]?{ok:1,code:c}:{ok:0}}const n=$("pbn"+id).value.trim();return n?{ok:1,code:"",name:n}:{ok:0}}
@@ -1670,7 +1673,7 @@ function awZ(k){const im=$("awimg"),bx=$("awbox");if(!im)return;const cur=parseF
 function awMode(v){AWM=v;const a=$("awpk"),b=$("awhf"),c=$("awmk");if(a)a.hidden=v==="all";if(b)b.hidden=v==="ego";if(c)c.hidden=!(v==="desc"||v==="all")}
 const fullAll=c=>{let n=[],p=P[c],i=0;const sn=new Set();while(p&&i++<100&&!sn.has(p)){sn.add(p);n.push(p.name);const f=P[p.father||p.mother];n.push(f?(bin?(p.sex==="F"?"بنت":"بن"):""):null);p=f}const fx=inh(c,"clan"),fy=inh(c,"lname")||famN();return n.filter(Boolean).join(" ")+(fx?" "+fx:"")+(fy?" "+fy:"")};
 function awFind(v){const e=$("awl");if(!e)return;v=(v||"").trim();if(!v){e.innerHTML="";return}
- const l=Object.values(P).filter(x=>(x.name||"").includes(v)||fullAll(x.code).includes(v)).sort(rk(v)).slice(0,40);
+ const l=Object.values(P).filter(x=>NM(x,v)).sort(rk(v)).slice(0,40);
  e.innerHTML=l.map(x=>`<div class="li" onclick="awPick('${x.code}')"><span style="white-space:normal;word-break:break-word">${E(fullAll(x.code))}</span></div>`).join("")||'<div class="mu" style="padding:8px">لا نتائج</div>'}
 function awPick(c){AWP=c;$("awl").innerHTML="";$("awq").value="";$("awc").textContent="المحدد: "+fullAll(c)}
 async function awGo(){try{toast("جاري التجهيز…");if(AWM!=="all"&&!P[AWP])return toast("اختر الاسم أولاً");
@@ -2030,7 +2033,7 @@ applyFL();
 
 /* القائمة الرئيسية (☰): تصغير حجمها حتى لا تتضخم مع حجم الخط الكبير */
 
-(function(){const g=egoLayout;egoLayout=function(e){return mcGet("el",e+"|"+MILKOFF+"|"+EXPC+"|"+OW1+"|"+OH1+"|"+OW2+"|"+OH2+"|"+OIND+"|"+OV,()=>g(e))}})();
+(function(){const g=egoLayout;egoLayout=function(e){return mcGet("el",e+"|"+MILKOFF+"|"+EXPC+"|"+OW1+"|"+OH1+"|"+OW2+"|"+OH2+"|"+OIND+"|"+OV+"|"+(window.HKH?1:0),()=>g(e))}})();
 </script>
 <style id="final-css">
 /* المتوفون: رمادي بحدود منقطة في كل الأنماط، والنقاط الثلاث تبقى ملونة حسب الجنس */
@@ -2282,7 +2285,7 @@ function setCardSize(k,v){
    +(q?`<div class="cd"><b>${E(full(q.code))}</b><div class="mu">${q.sex==="F"?"أخت":"أخ"} بالتبني لـ ${E(p.name)}</div><button class="btn o" style="margin-top:8px" onclick="adopClear('${c}')">إلغاء الرابط</button></div>`:"")
    +`<input id="adq" placeholder="ابحث باسم الأخ بالتبني" oninput="adopFind('${c}',this.value)"><div id="adl"></div><div class="mu" style="font-size:12px;margin-top:8px">الرابط بين الاثنين فقط: لا عمومة ولا خؤولة ولا أي قرابة أخرى، ويظهر أبناء كل واحد عند الثاني.</div>`)};
  window.adopFind=function(c,v){const e=$("adl");if(!e)return;v=(v||"").trim();if(!v){e.innerHTML="";return}
-  const l=Object.values(P).filter(p=>p.code!==c&&(p.name||"").includes(v)).slice(0,12);
+  const l=Object.values(P).filter(p=>p.code!==c&&NM(p,v)).sort(rk(v)).slice(0,12);
   e.innerHTML=l.map(p=>`<div class="li" onclick="adopSet('${c}','${p.code}')"><span>${E(full(p.code))}</span><span>‹</span></div>`).join("")||'<div class="mu" style="margin-top:8px">لا نتائج</div>'};
  window.adopSet=async function(c,o){try{
   if(!P[c]||!P[o]||c===o)return;
@@ -2344,12 +2347,12 @@ button.busy::after{content:"";display:inline-block;width:14px;height:14px;margin
 <div id="ldbar"></div>
 <script id="busy-js">
 /* شريط تحميل + قفل الزر المضغوط أثناء أي عملية تأخذ وقت */
-(function(){let n=0,LB=null,LT=0;const bar=document.getElementById("ldbar");
+(function(){let n=0,LB=null,LT=0,CID=0;const BC=new WeakMap(),bar=document.getElementById("ldbar");
  const show=()=>{let u=0;try{u=UP}catch(e){}bar.style.display=(n>0||u>0)?"block":"none"};
- document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button");if(b){LB=b;LT=Date.now()}},true);
+ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button");CID++;if(b){LB=b;LT=Date.now()}},true);
  function wrap(name){const o=window[name];if(typeof o!=="function"||o.__w)return;
   const w=async function(){const b=(LB&&Date.now()-LT<600&&document.body.contains(LB))?LB:null;
-   if(b){if(b.classList.contains("busy"))return;b.classList.add("busy")}
+   if(b){if(b.classList.contains("busy")){if(BC.get(b)!==CID)return;return o.apply(this,arguments)}BC.set(b,CID);b.classList.add("busy")}
    n++;show();
    try{return await o.apply(this,arguments)}finally{n--;show();if(b)b.classList.remove("busy")}};
   w.__w=1;window[name]=w}
@@ -2382,7 +2385,7 @@ function bfSet(v){document.body.classList.toggle("bf-off",!!v);try{if(v)localSto
  try{render()}catch(e){}})();
 </script>
 <style id="kb-css">
-#scr,#sh{top:var(--vvt,0px)!important;bottom:var(--kb,0px)!important}
+#scr,#sh,#wel{top:calc(var(--vvt,0px) + var(--vvx,0px))!important;bottom:calc(var(--kb,0px) + var(--kbx,0px))!important}
 </style>
 <script id="kb-js">
 /* لوحة المفاتيح ما تغطي خانة الكتابة (خصوصاً الآيفون) */
@@ -2804,6 +2807,165 @@ body.zn-off.bf-tree #zns{display:block}
  const rz=render;render=function(){const v=rz.apply(this,arguments);try{upd();place()}catch(e){}return v};
  window.addEventListener("resize",()=>{try{place()}catch(e){}});
  try{upd();place()}catch(e){}
+})();
+</script>
+<script id="priv-js">
+/* عائلات مخفية: لا يراها إلا محارمها ونسايبها (والمشرف). تُخزَّن جذور العائلات المخفية في M.priv */
+(function(){
+ const priv=()=>Array.isArray(M&&M.priv)?M.priv:[];
+ const isA=()=>!!(window.isAdm&&window.isAdm());
+ /* أفراد العائلة المخفية: الجذر وذريته من جهة الأب وزوجات الذكور منهم */
+ function members(t,r){
+  const H=new Set();if(!t[r])return H;H.add(r);
+  const kids=new Map();
+  Object.values(t).forEach(p=>{[p.father,p.mother].forEach(x=>{if(x){let l=kids.get(x);if(!l)kids.set(x,l=[]);l.push(p)}})});
+  const q=[r];
+  while(q.length){
+   const c=q.pop(),p=t[c];if(!p)continue;
+   if(p.sex!=="F")(p.spouses||[]).forEach(s=>{if(t[s])H.add(s)});
+   (kids.get(c)||[]).forEach(k=>{
+    if(H.has(k.code))return;
+    if(k.father===c||(k.mother===c&&(!k.father||!t[k.father]||H.has(k.father)))){H.add(k.code);q.push(k.code)}
+   });
+  }
+  return H;
+ }
+ /* هل المشاهد V من أهل العائلة أو من محارمها أو من نسايبها؟ */
+ function entitled(t,V,H){
+  if(H.has(V))return true;
+  const v=t[V];if(!v)return false;
+  const hit=x=>{const p=t[x];return !!p&&(H.has(x)||(p.spouses||[]).some(s=>H.has(s))||(p.div||[]).some(s=>H.has(s)))};
+  if(hit(V))return true;
+  let ms;const u=P;P=t;
+  try{ms=MSK.mahramSet(v)}finally{P=u}
+  for(const x of ms)if(hit(x))return true;
+  return false;
+ }
+ function privView(t){
+  const R=priv();if(!R.length||!t||isA())return t;
+  const V=(typeof ME!=="undefined"&&ME&&t[ME])?ME:null,hide=new Set();
+  R.forEach(r=>{const H=members(t,r);if(!H.size)return;if(V&&entitled(t,V,H))return;H.forEach(c=>hide.add(c))});
+  if(!hide.size)return t;
+  const o={};Object.values(t).forEach(p=>{if(!hide.has(p.code))o[p.code]=p});return o;
+ }
+ window.privView=privView;window.privMembers=members;
+ (function(){const m0=maskView;maskView=function(t){return m0(privView(t))}})();
+ let sig=JSON.stringify(priv());
+ (function(){const r0=render;render=function(){const n=JSON.stringify(priv());if(n!==sig){sig=n;try{remask()}catch(e){}}return r0.apply(this,arguments)}})();
+ async function save(list){
+  const d={...M,priv:list};
+  if(DB)await DB.doc("meta/family").set(d);
+  M=d;sig=JSON.stringify(priv());try{remask()}catch(e){}render();
+ }
+ window.privToggle=async function(c){
+  if(!isA())return;
+  const cur=priv().slice(),i=cur.indexOf(c),on=i<0;
+  if(on&&!confirm("سيُخفى هذا الفرد وذريته من جهة الأب وزوجات الذكور منهم.\nلن يراهم إلا محارمهم ونسايبهم (من تزوّج منهم، أو تزوّج أحد منهم من محارمه) والمشرف.\nمتابعة؟"))return;
+  if(on)cur.push(c);else cur.splice(i,1);
+  try{await save(cur);cl();toast(on?"تم إخفاء العائلة ✓":"تم إلغاء الإخفاء ✓",1)}catch(e){toast("تعذر الحفظ: "+(e.message||e))}
+ };
+ window.privOff=async function(c){
+  if(!isA())return;
+  try{await save(priv().filter(x=>x!==c));bk();privList()}catch(e){toast("تعذر الحفظ: "+(e.message||e))}
+ };
+ window.privList=function(){
+  const T=RAW||P,L=priv().filter(c=>T[c]);
+  scr("العائلات المخفية",
+   `<div class="cd hl">لا يرى هذه العائلات إلا محارمها ونسايبها والمشرف. لإخفاء عائلة افتح قائمة (⋮) الفرد الذي هو رأس العائلة واختر «إخفاء هذه العائلة».</div>`+
+   (L.length?L.map(c=>`<div class="cd"><b>${E(T[c].name)}</b><div class="mu">${privMembers(T,c).size} فرد</div><button class="btn o" style="margin-top:8px" onclick="privOff('${c}')">إلغاء الإخفاء</button></div>`).join(""):`<div class="cd mu">لا توجد عائلات مخفية.</div>`));
+ };
+ (function(){
+  const cm=cardMenu;cardMenu=function(c){cm.apply(this,arguments);try{if(!isA())return;const pn=document.querySelector("#sh .pn");if(!pn)return;const on=priv().includes(c);
+   pn.insertAdjacentHTML("beforeend",li(on?"\u{1F513}":"\u{1F648}",on?"إلغاء إخفاء العائلة":"إخفاء هذه العائلة",on?"privToggle('"+c+"')":"privToggle('"+c+"')",on?"هذه العائلة مخفية حالياً":"لا يراها إلا محارمها ونسايبها"))}catch(e){}};
+  const mn=menu;menu=function(){mn.apply(this,arguments);try{if(!isA()||window.SHARE)return;const pn=document.querySelector("#sh .pn");if(!pn)return;
+   pn.insertAdjacentHTML("beforeend",`<div class="cd">${li("\u{1F648}","العائلات المخفية ("+priv().length+")","cl();privList()","إدارة العائلات التي لا يراها إلا محارمها ونسايبها")}</div>`)}catch(e){}};
+ })();
+})();
+</script>
+<script id="smartsearch-js">
+/* بحث ذكي: يفهم «ياسر خالد» كـ «ياسر بن خالد»، و«مها ياسر» كـ «مها بنت ياسر»، ويقدّم صاحب الاسم نفسه على أبنائه */
+(function(){
+ const CON=new Set(["بن","ابن","بنت","ابنه","ولد","بنت"]);
+ const nz=t=>String(t==null?"":t).replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").toLowerCase().trim();
+ const sa=w=>w.length>3&&w.startsWith("ال")?w.slice(2):w;
+ const qt=v=>nz(v).split(/\s+/).filter(t=>t&&!CON.has(t));
+ function chain(p){
+  const w=[],seen=new Set();let x=p,i=0;
+  while(x&&i<12&&!seen.has(x.code)){seen.add(x.code);String(x.name||"").split(/\s+/).filter(Boolean).forEach(t=>w.push([nz(t),i]));x=P[x.father||x.mother];i++}
+  let fx="",fy="";try{fx=inh(p.code,"clan")||"";fy=inh(p.code,"lname")||famN()||""}catch(e){}
+  (fx+" "+fy).split(/\s+/).filter(Boolean).forEach(t=>w.push([nz(t),99]));
+  return w;
+ }
+ const qual=(w,q)=>{if(w===q)return 0;const ws=sa(w),qs=sa(q);if(ws===qs)return 0;if(w.startsWith(q)||ws.startsWith(qs))return 1;if(w.includes(q))return 2;return -1};
+ function sc(p,v){
+  const T=qt(v);if(!T.length)return null;
+  const W=chain(p);let best=null;
+  for(let s=0;s<W.length;s++){
+   const q0=qual(W[s][0],T[0]);if(q0<0)continue;
+   let tot=W[s][1]*100+q0*8,prev=s,pg=W[s][1],ok=true;
+   for(let k=1;k<T.length;k++){
+    let f=-1,fq=0;
+    for(let j=prev+1;j<W.length;j++){const q=qual(W[j][0],T[k]);if(q>=0){f=j;fq=q;break}}
+    if(f<0){ok=false;break}
+    tot+=fq*8+Math.min(20,Math.max(0,W[f][1]-pg-1)*10);prev=f;pg=W[f][1];
+   }
+   if(ok&&(best===null||tot<best))best=tot;
+  }
+  return best===null?null:best+String(p.name||"").length/1000;
+ }
+ window.NM=function(p,v){
+  v=String(v==null?"":v).trim();if(!v)return true;
+  try{if(sc(p,v)!==null)return true}catch(e){}
+  try{return (p.name||"").includes(v)||full(p.code).includes(v)}catch(e){return (p.name||"").includes(v)}
+ };
+ window.rk=function(v){
+  v=String(v==null?"":v).trim();const m=new Map();
+  const g=x=>{let s=m.get(x.code);if(s===undefined){try{s=sc(x,v)}catch(e){s=null}
+   if(s===null){const n=nz(x.name||""),q=nz(v);s=1000+(n===q?0:n.startsWith(q)?1:n.includes(q)?2:3)}m.set(x.code,s)}return s};
+  return (a,b)=>g(a)-g(b);
+ };
+})();
+</script>
+<script id="kbfix-js">
+/* تصحيح ذاتي لموضع الشاشات السفلية مع لوحة المفاتيح (خصوصاً سفاري الآيفون): يقيس مكان الشاشة فعلياً ويرفعها حتى تصير كلها فوق الكيبورد */
+(function(){
+ const vv=window.visualViewport,R=document.documentElement,IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ let kbx=0,vvx=0,t=0,n=0,fb=false;
+ const isIn=a=>a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest("#scr,#sh,#wel");
+ const vis=e=>e&&!e.hidden&&e.offsetHeight>0;
+ const cur=()=>{const w=document.getElementById("wel"),a=document.getElementById("sh"),b=document.getElementById("scr");return vis(w)?w:vis(a)?a:vis(b)?b:null};
+ const put=()=>{R.style.setProperty("--kbx",kbx+"px");R.style.setProperty("--vvx",vvx+"px")};
+ function pass(){
+  if(!vv)return false;
+  const e=cur();
+  if(!e){if(kbx||vvx){kbx=vvx=0;put()}return false}
+  if(fb)return false;
+  const rc=e.getBoundingClientRect(),B=vv.offsetTop+vv.height,dt=rc.top-vv.offsetTop,db=rc.bottom-B;let ch=false;
+  if(Math.abs(dt)>1.5){vvx-=dt;ch=true}
+  if(Math.abs(db)>1.5){const k=Math.max(0,kbx+db);if(k!==kbx){kbx=k;ch=true}}
+  if(ch)put();
+  return ch;
+ }
+ function reveal(){
+  const a=document.activeElement;if(!isIn(a)||!vv)return;
+  const r=a.getBoundingClientRect(),B=vv.offsetTop+vv.height-8,T=vv.offsetTop+8;
+  if(r.bottom>B||r.top<T){try{a.scrollIntoView({block:"center",behavior:"auto"})}catch(x){}}
+ }
+ function run(d){
+  clearTimeout(t);n=0;
+  const step=()=>{const ch=pass();if(++n<7&&(ch||n<3))t=setTimeout(step,80);else reveal()};
+  t=setTimeout(step,d||0);
+ }
+ /* احتياط لآيفون: إذا ما تقلّص visualViewport مع ظهور الكيبورد نرفع الشاشة بتقدير تقريبي */
+ function iosFallback(){
+  const a=document.activeElement;if(!IOS||!vv||!isIn(a)||!cur())return;
+  if(vv.height>=innerHeight-1&&vv.offsetTop<1&&a.getBoundingClientRect().bottom>innerHeight*.55){fb=true;kbx=Math.round(innerHeight*.4);vvx=0;put();setTimeout(reveal,60)}
+ }
+ if(vv){vv.addEventListener("resize",()=>{fb=false;run(0)});vv.addEventListener("scroll",()=>run(0))}
+ document.addEventListener("focusin",e=>{if(isIn(e.target)){run(60);run(400);setTimeout(iosFallback,700)}});
+ document.addEventListener("focusout",()=>setTimeout(()=>{if(!isIn(document.activeElement)){fb=false;kbx=0;vvx=0;put();run(120)}},250));
+ window.addEventListener("orientationchange",()=>setTimeout(()=>run(0),300));
+ window.__kbfix={pass,run,get:()=>({kbx,vvx})};
 })();
 </script>
 </body>
