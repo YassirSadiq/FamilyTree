@@ -495,8 +495,9 @@ async function exportPNG(rc){cl();let dl=null;try{dl=await claude.use("downloads
 EM["\u2B07"]="dl";
 function outline(c,seen,d){seen.add(c);const p=P[c],sp=p.spouses.map(s=>P[s]).filter(Boolean).map(s=>s.name).join("، ");let o="  ".repeat(d)+(d?"└ ":"")+p.name+(p.dead?" (متوفى)":"")+(sp?(p.sex==="F"?" — زوجها: ":" — زوجته: ")+sp:"")+"\n";kids(c).forEach(k=>{if(!seen.has(k.code))o+=outline(k.code,seen,d+1)});return o}
 function nasab(c){const p=P[c];if(!p)return"";const n=[kn(p)+p.name],seen=new Set([c]);let q=p;while(n.length<80){const f=P[q.father||q.mother];if(!f||seen.has(f.code))break;seen.add(f.code);if(bin)n.push(q.sex==="F"?"بنت":"بن");n.push(f.name);q=f}const fx=inh(c,"clan"),fy=inh(c,"lname")||famN();return n.join(" ")+(fx?" "+fx:"")+(fy?" "+fy:"")}
-function setTheme(v){try{localStorage.setItem("theme",v)}catch(e){}if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme")}
-function themeSheet(){let c="auto";try{c=localStorage.getItem("theme")||"auto"}catch(e){}cl();scr("المظهر",`<div class="cd"><h3>مظهر التطبيق</h3>${[["auto","تلقائي (حسب الجهاز)"],["light","فاتح"],["dark","داكن"]].map(x=>`<label class="opt"><input type="radio" name="th" value="${x[0]}"${c===x[0]?" checked":""} onchange="setTheme(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل بطاقات الأسماء</h3>${[["cl","الكلاسيكي (دائرة وثلاث نقاط)"],["new","بأزرار ظاهرة (عرض / إضافة / تعديل)"]].map(x=>`<label class="opt"><input type="radio" name="cs" value="${x[0]}"${(document.body.classList.contains("cs-cl")?"cl":"new")===x[0]?" checked":""} onchange="setCardStyle(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل إطار البطاقة</h3>${[["none","عادي"],["cloud","☁️ سحابة"],["leaf","🍃 ورقة"],["pill","💊 كبسولة"]].map(x=>`<label class="opt"><input type="radio" name="sh" value="${x[0]}"${(((document.body.className.match(/\bsh-(\w+)/)||[])[1])||"none")===x[0]?" checked":""} onchange="setShape(this.value)">${x[1]}</label>`).join("")}</div><div class="cd pkc" data-pk="1"><h3>حجم الخط (من 1 إلى 10)</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="fzv">${FL+1}</span> من 10</div><input type="range" min="1" max="10" step="1" value="${FL+1}" style="width:100%" oninput="FL=parseInt(this.value)-1;applyFL();$('fzv').textContent=this.value"></div>${window.txtPanels?window.txtPanels():""}${window.spPanel?window.spPanel():""}<div class="cd pkc" data-pk="1"><h3>حجم البطاقة</h3><div style="font-weight:700;margin-top:6px">العرض: <span id="csvw">${CWn}</span> من 10</div><input id="csrw" type="range" min="1" max="10" step="1" value="${CWn}" style="width:100%" oninput="$('csvw').textContent=this.value;pkSize('w',this.value)" onchange="pkSize('w',this.value,1)"><div style="font-weight:700;margin-top:10px">الطول: <span id="csvh">${CHn}</span> من 10</div><input id="csrh" type="range" min="1" max="10" step="1" value="${CHn}" style="width:100%" oninput="$('csvh').textContent=this.value;pkSize('h',this.value)" onchange="pkSize('h',this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 صغير</span><span>10 كبير</span></div><button class="btn o" style="margin-top:10px" onclick="setCardSize('r')">رجوع للحجم الافتراضي (5 و 5)</button></div><div class="cd"><label class="opt" style="margin:0"><input type="checkbox" ${window.HKH?"checked":""} onchange="hkhSet(this.checked)"><span><b>مسمى القرابة مرة واحدة لكل مجموعة</b><br><span class="mu" style="font-size:12.5px;line-height:1.8">يُكتب «الأعمام» أو «الأخوال» أو «الإخوان» مرة واحدة فوق المجموعة بدل تكراره على كل بطاقة، فتظهر الأسماء أنظف. وتبقى «بالرضاعة» و«بالتبني» مكتوبة على بطاقات أصحابها.</span></span></label></div><div class="cd"><h3>بطاقات الأسماء</h3><label class="opt"><input type="checkbox"${document.body.classList.contains("hide-sp")?" checked":""} onchange="setHideSp(this.checked)">إخفاء اسم الزوج/الزوجة من بطاقات الأسماء</label></div><div class="cd"><h3>الأفراد في الشجرة</h3><label class="opt"><input type="checkbox"${hideF?" checked":""} onchange="setHideF(this.checked)">إخفاء الإناث من الشجرة</label><div class="mu" style="font-size:12px;margin-top:4px">يخفي كل الإناث، وكل من ينتسب للشجرة عن طريق أمه فقط. البيانات تبقى محفوظة كما هي، وترجع تظهر عند إلغاء الخيار.</div></div><div class="cd"><h3>العرض والشاشة</h3>${li("🌳","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("📱","ملء الشاشة وتثبيت التطبيق","fsSheet()","يظهر بدون شريط المتصفح")}<label class="opt"><input type="checkbox"${document.body.classList.contains("zb-off")?"":" checked"} onchange="zbSet(!this.checked)">إظهار أزرار التكبير والتصغير الجانبية</label><label class="opt"><input type="checkbox"${document.body.classList.contains("zn-off")?"":" checked"} onchange="znSet(!this.checked)">إظهار أزرار الرجوع والتقدم</label></div>`)}
+function setTheme(v){try{localStorage.setItem("theme",v)}catch(e){}const r=document.documentElement;r.removeAttribute("data-tone");if(v==="navy"){r.setAttribute("data-theme","dark");r.setAttribute("data-tone","navy")}else if(v==="light"||v==="dark")r.setAttribute("data-theme",v);else r.removeAttribute("data-theme")}
+function cardsSheet(){scr("تخصيص بطاقات الأسماء",`<div class="cd pkc" data-pk="1"><h3>حجم الخط (من 1 إلى 10)</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="fzv">${FL+1}</span> من 10</div><input type="range" min="1" max="10" step="1" value="${FL+1}" style="width:100%" oninput="FL=parseInt(this.value)-1;applyFL();$('fzv').textContent=this.value"></div>${window.spPanel?window.spPanel():""}<div class="cd pkc" data-pk="1"><h3>حجم البطاقة</h3><div style="font-weight:700;margin-top:6px">العرض: <span id="csvw">${CWn}</span> من 10</div><input id="csrw" type="range" min="1" max="10" step="1" value="${CWn}" style="width:100%" oninput="$('csvw').textContent=this.value;pkSize('w',this.value)" onchange="pkSize('w',this.value,1)"><div style="font-weight:700;margin-top:10px">الطول: <span id="csvh">${CHn}</span> من 10</div><input id="csrh" type="range" min="1" max="10" step="1" value="${CHn}" style="width:100%" oninput="$('csvh').textContent=this.value;pkSize('h',this.value)" onchange="pkSize('h',this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 صغير</span><span>10 كبير</span></div><button class="btn o" style="margin-top:10px" onclick="setCardSize('r')">رجوع للحجم الافتراضي (5 و 5)</button></div><div class="mu" style="margin:6px 4px">حرّك أي شريط وتشوف التغيير مباشرة على الشجرة.</div>`)}
+function themeSheet(){let c="auto";try{c=localStorage.getItem("theme")||"auto"}catch(e){}if(c!=="light"&&c!=="dark"&&c!=="navy")c=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";cl();scr("المظهر",`<div class="cd"><h3>مظهر التطبيق</h3>${[["light","فاتح"],["navy","كحلي"],["dark","داكن"]].map(x=>`<label class="opt"><input type="radio" name="th" value="${x[0]}"${c===x[0]?" checked":""} onchange="setTheme(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل بطاقات الأسماء</h3>${[["cl","الكلاسيكي (دائرة وثلاث نقاط)"],["new","بأزرار ظاهرة (عرض / إضافة / تعديل)"]].map(x=>`<label class="opt"><input type="radio" name="cs" value="${x[0]}"${(document.body.classList.contains("cs-cl")?"cl":"new")===x[0]?" checked":""} onchange="setCardStyle(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>شكل إطار البطاقة</h3>${[["none","عادي"],["cloud","☁️ سحابة"],["leaf","🍃 ورقة"],["pill","💊 كبسولة"]].map(x=>`<label class="opt"><input type="radio" name="sh" value="${x[0]}"${(((document.body.className.match(/\bsh-(\w+)/)||[])[1])||"none")===x[0]?" checked":""} onchange="setShape(this.value)">${x[1]}</label>`).join("")}</div><div class="cd"><h3>بطاقات الأسماء</h3><div class="mu" style="margin-bottom:8px">حجم الخط، المسافة بين الأسماء، وحجم البطاقة</div><button class="btn o" style="width:100%" onclick="cardsSheet()">🗂️ تخصيص بطاقات الأسماء ‹</button></div><div class="cd"><h3>مربع الاسم (أعلى الشجرة)</h3><div class="mu" style="margin-bottom:8px">حجم نص الاسم وصلة القرابة</div><button class="btn o" style="width:100%" onclick="nameBoxSheet()">🔠 تخصيص مربع الاسم ‹</button></div><div class="cd"><label class="opt" style="margin:0"><input type="checkbox" ${window.HKH?"checked":""} onchange="hkhSet(this.checked)"><span><b>مسمى القرابة مرة واحدة لكل مجموعة</b><br><span class="mu" style="font-size:12.5px;line-height:1.8">يُكتب «الأعمام» أو «الأخوال» أو «الإخوان» مرة واحدة فوق المجموعة بدل تكراره على كل بطاقة، فتظهر الأسماء أنظف. وتبقى «بالرضاعة» و«بالتبني» مكتوبة على بطاقات أصحابها.</span></span></label></div><div class="cd"><h3>بطاقات الأسماء</h3><label class="opt"><input type="checkbox"${document.body.classList.contains("hide-sp")?" checked":""} onchange="setHideSp(this.checked)">إخفاء اسم الزوج/الزوجة من بطاقات الأسماء</label></div><div class="cd"><h3>الأفراد في الشجرة</h3><label class="opt"><input type="checkbox"${hideF?" checked":""} onchange="setHideF(this.checked)">إخفاء الإناث من الشجرة</label><div class="mu" style="font-size:12px;margin-top:4px">يخفي كل الإناث، وكل من ينتسب للشجرة عن طريق أمه فقط. البيانات تبقى محفوظة كما هي، وترجع تظهر عند إلغاء الخيار.</div></div><div class="cd"><h3>العرض والشاشة</h3>${li("🌳","عرض الشجرة","viewSet()","الاتجاه وصياغة الاسم الكامل")}${li("📱","ملء الشاشة وتثبيت التطبيق","fsSheet()","يظهر بدون شريط المتصفح")}<label class="opt"><input type="checkbox"${document.body.classList.contains("zb-off")?"":" checked"} onchange="zbSet(!this.checked)">إظهار أزرار التكبير والتصغير الجانبية</label><label class="opt"><input type="checkbox"${document.body.classList.contains("zn-off")?"":" checked"} onchange="znSet(!this.checked)">إظهار أزرار الرجوع والتقدم</label></div>`)}
 function setHideSp(v){try{localStorage.setItem("hsp",v?"1":"")}catch(e){}document.body.classList.toggle("hide-sp",!!v)}
 try{if(localStorage.getItem("hsp"))document.body.classList.add("hide-sp")}catch(e){}
 function setCardStyle(v){try{localStorage.setItem("cs",v)}catch(e){}document.body.classList.toggle("cs-cl",v!=="new")}
@@ -546,7 +547,7 @@ async function boardCanvas(sc){
   if(w>=64){const ww=isR?Math.max(w,150):w,hh=isR?Math.max(h,60):h;cvRR(x,px-ww/2,py-hh/2,ww,hh,hh/2);x.fill();x.stroke();x.setLineDash([]);const fs=Math.max(9,Math.min(26,ww*.15));x.fillStyle="#2a3b2c";x.font="700 "+fs+"px Tajawal,system-ui,sans-serif";x.fillText(p.name,px,py+fs*.35,ww-12)}
   else{x.beginPath();x.arc(px,py,Math.max(5,w*.42),0,7);x.fill();x.stroke();x.setLineDash([])}});
  return cv}
-(()=>{try{const v=localStorage.getItem("theme");if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v)}catch(e){}})();
+(()=>{try{const v=localStorage.getItem("theme");if(v==="navy"){document.documentElement.setAttribute("data-theme","dark");document.documentElement.setAttribute("data-tone","navy")}else if(v==="light"||v==="dark")document.documentElement.setAttribute("data-theme",v)}catch(e){}})();
 function menu(){sheet(`<h2><span></span><button class="ic" onclick="cl()">✕</button></h2><div class="avw" style="text-align:center"><div class="avl"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="24" width="4" height="12" rx="1.5" fill="#8a5a2b"/><circle cx="20" cy="15" r="9" fill="#2f9e57"/><circle cx="12" cy="21" r="6.5" fill="#3fb86a"/><circle cx="28" cy="21" r="6.5" fill="#3fb86a"/></svg></div><b style="display:block;margin-top:8px">${E(fname())}</b><small class="mu" data-orph="1">${Object.keys(P).length} فرد</small></div><div class="mu" style="margin-top:10px">أدوات العائلة</div><div class="cd">${li("📖","نبذة عن العائلة","cl();aboutFam()","نبذة عن القبيلة المسجّلة في الشجرة")}${li("🕌","صلة الرحم","rahmScr()","الأقارب الواجب والمستحب صلتهم")}${li("\u{1F465}","حاسبة القرابة","cl();relCalc()","اعرف صلة القرابة بين أي فردين")}${li("\u{1F558}","سجل التعديلات","logs()","آخر الإضافات والتعديلات والحذف")}${li("\u{1F332}","مشجرة العائلة","cl();orgOpen()","الأب والأم وصلة القرابة بينهما")}${li("\u{1F4CA}","الإحصائيات","cl();stats()","الأجيال وأكثر الأفراد أبناءً")}${li("📰","أخبار العائلة <span class=\"soonb\">قريباً</span>","cl();newsSoon()","مناسبات العائلة وأخبارها")}${(window.myPendCount&&window.myPendCount())?li("⏳","تعديلاتي المنتظرة ("+window.myPendCount()+")","cl();pendSheet()","تعديلات بانتظار موافقة المشرف"):""}</div><div class="mu">التصدير والنسخ</div><div class="cd">${li("📸","تصدير الشجرة إلى صورة","awSheet()","شجرة شخص أو فرد وذريته بدقة عالية")}${li("\u{1F5BC}","تصدير الشجرة إلى لوحة","posterSheet()","شجرة مزخرفة للطباعة والتعليق: الفرد في الجذع وذريته أوراق")}</div><div class="mu">الإعدادات</div><div class="cd">${li("🎨","المظهر","themeSheet()","الألوان وعرض الشجرة وملء الشاشة")}${li("\u{1F4A1}","إرشادات سريعة","cl();qGuide()","طريقة الاستخدام في دقيقة")}${li("📘","دليل الاستخدام","helpSheet()","جولة تعريفية بكل مميزات التطبيق")}</div>`)}
 let RA=null,RB=null;
 function relCalc(){RA=RB=null;scr("حاسبة القرابة",`<div class="cd"><label>الفرد الأول</label><input id="ra" placeholder="ابحث بالاسم" oninput="rp('a',this.value)"><div id="la"></div><label>الفرد الثاني</label><input id="rb" placeholder="ابحث بالاسم" oninput="rp('b',this.value)"><div id="lb"></div></div><div id="rr"></div>`)}
@@ -606,8 +607,9 @@ const COL={"--gd":"#c8962b","--wj":"#0f8a5f","--mt":"#c98300","--f":"#2f6fb5","-
 function milkRelBase(t){if(!mcGet("hm",0,()=>Object.values(P).some(r=>r.milk&&r.milk.length)))return{M:[],fathers:[],sibs:[],ks:[]};const e=t.milk.filter(r=>P[r]),u=Object.values(P),a=[...new Set(e.flatMap(r=>P[r].spouses.filter(h=>P[h]&&male(P[h]))))],s=u.filter(r=>r.code!==t.code&&(r.milk.some(h=>e.includes(h))||(e.includes(r.mother)&&(!t.ms||t.ms.includes(r.code)))||(t.mother&&r.milk.includes(t.mother)&&(!r.ms||r.ms.includes(t.code))))),o=u.filter(r=>r.milk.includes(t.code)||male(t)&&r.milk.some(h=>t.spouses.includes(h)));return{M:e,fathers:a,sibs:s.map(r=>r.code),ks:o.map(r=>r.code)}}
 function milkRel(t){return mcGet("b",t,()=>milkRelBase(t))}
 const CSL=[.7,.78,.86,.93,1,1.08,1.16,1.25,1.35,1.5];
-let CWn=5,CHn=5;try{const g=k=>{const v=parseInt(localStorage.getItem(k));return v>=1&&v<=10?v:0},o=g("csz");CWn=g("cszw")||o||5;CHn=g("cszh")||o||5}catch(e){}
-let CWc=CSL[CWn-1],CHc=CSL[CHn-1];
+const CWL=[.7,.84,.97,1.11,1.25,1.33,1.42,1.5,1.6,1.7],CHL=[.55,.61,.67,.72,.78,.86,.95,1.05,1.17,1.3];
+let CWn=5,CHn=5;try{const g=k=>{const v=parseInt(localStorage.getItem(k));return v>=1&&v<=10?v:0};CWn=g("cszw2")||5;CHn=g("cszh2")||5}catch(e){}
+let CWc=CWL[CWn-1],CHc=CHL[CHn-1];
 function csVars(){const r=document.documentElement.style;r.setProperty("--csw",CWc);r.setProperty("--csh",CHc);r.setProperty("--cs",Math.min(CWc,CHc))}csVars();
 const csW=v=>Math.round(v*CWc),csH=v=>Math.round(v*CHc);
 let OW1=csW(250),OH1=csH(172),OW2=csW(236),OH2=csH(140),OIND=csW(30),OV=26;
@@ -823,7 +825,7 @@ const rld=()=>{try{return JSON.parse(localStorage.getItem("rahm_v1")||"{}")}catc
 const rkey=()=>ME+"|"+RS.y+"|"+(RS.top==="w"?"m"+RS.mon:"h"+RS.half);
 const chOf=s=>Object.values(P).filter(x=>s.sex==="F"?x.mother===s.code:x.father===s.code);
 function rahmGroups(){const me=P[ME],f=P[me.father],m=P[me.mother],u=l=>{const s=new Set;return l.filter(x=>x&&x.code!==ME&&!s.has(x.code)&&s.add(x.code))},sib=u(sibsOf(me));
- if(RS.top==="w")return[["الوالدان",u([f,m])],["الإخوة والأخوات",sib],["الأعمام والعمّات",f?u(sibsOf(f)):[]],["الأخوال والخالات",m?u(sibsOf(m)):[]],["أبناء الإخوة",u(sib.filter(x=>x.sex!=="F").flatMap(chOf))],["أبناء الأخوات",u(sib.filter(x=>x.sex==="F").flatMap(chOf))]];
+ if(RS.top==="w")return[["الوالدان",u([f,m])],["الأجداد والجدات",u([f&&P[f.father],f&&P[f.mother],m&&P[m.father],m&&P[m.mother]])],["الإخوة والأخوات",sib],["الأعمام والعمّات",f?u(sibsOf(f)):[]],["الأخوال والخالات",m?u(sibsOf(m)):[]],["أبناء الإخوة",u(sib.filter(x=>x.sex!=="F").flatMap(chOf))],["أبناء الأخوات",u(sib.filter(x=>x.sex==="F").flatMap(chOf))]];
  const fl=l=>u(l).filter(x=>!x.dead&&x.sex===me.sex);const gr=[];[[f,1],[m,0]].forEach(([par,pa])=>{if(!par)return;sibsOf(par).forEach(w=>{const l=fl(chOf(w));if(l.length)gr.push(["أولاد "+E(w.name)+' <small class="mu">('+(pa?(w.sex==="F"?"عمّتك":"عمّك"):(w.sex==="F"?"خالتك":"خالك"))+")</small>",l])})});return gr}
 function rahmDraw(){const e=$("scr"),sb=e&&e.querySelector(".sb"),st=sb?sb.scrollTop:0,G=rahmGroups(),S=rld()[rkey()]||{};let tot=0,dn=0;
  const mkRow=(x)=>{tot++;const c=S[x.code];c&&dn++;return`<div class="rrw"><span class="sq${c?" on":""}" onclick="rahmPick('${x.code}')">${c?"✓":""}</span><span class="rn" onclick="rahmGo('${x.code}')">${E(x.name)}<small class="mu">${E(relTxt(ME,x.code))}</small></span><span class="rt">${c?E(c):""}</span></div>`};
@@ -1687,7 +1689,7 @@ async function awGo(){try{toast("جاري التجهيز…");if(AWM!=="all"&&!P
 
 /* ===== شكل إطار البطاقة ===== */
 function setShape(v){try{localStorage.setItem("shape",v)}catch(e){}document.body.className=document.body.className.replace(/\bsh-\w+/g,"").trim();if(v&&v!=="none")document.body.classList.add("sh-"+v)}
-try{const v=localStorage.getItem("shape");if(v&&v!=="none")document.body.classList.add("sh-"+v)}catch(e){}
+try{const v=localStorage.getItem("shape")||"pill";if(v&&v!=="none")document.body.classList.add("sh-"+v)}catch(e){document.body.classList.add("sh-pill")}
 
 </script>
 <script>
@@ -1864,7 +1866,7 @@ document.addEventListener("click",ev=>{
 
 const FZC=[1.9,2.05,2.2,2.35,2.5,2.65,2.8,2.95,3.1,3.25],FZU=[1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4];
 let FL=0;
-try{const s2=localStorage.getItem("fzl2"),s=localStorage.getItem("fzl");if(s2!==null)FL=Math.min(9,Math.max(0,parseInt(s2)||0));else if(s!==null)FL=Math.min(9,Math.max(0,(parseInt(s)||0)-5))}catch(e){}
+try{const s2=localStorage.getItem("fzl2"),s=localStorage.getItem("fzl");if(s2!==null)FL=Math.min(9,Math.max(0,parseInt(s2)||0));else if(s!==null)FL=Math.min(9,Math.max(0,(parseInt(s)||0)-5));else FL=4}catch(e){}
 function applyFL(){const s=document.documentElement.style;s.setProperty("--cz",FZC[FL]);s.setProperty("--uz",FZU[FL]);s.setProperty("--pz",String(Math.max(.9,FZU[FL]*.65)));
  try{localStorage.setItem("fzl2",FL);localStorage.setItem("fz",FZC[FL])}catch(e){}
  const b=document.getElementById("fzb");if(b)b.innerHTML="<b>Aa</b>"+"الخط "+(FL+1)+"/10"}
@@ -2091,10 +2093,7 @@ function zbDecor(){
  if(!r){r=document.createElement("button");r.id="zbs";r.textContent="⚙ الأزرار";r.title="إظهار أزرار التكبير والتصغير";r.onclick=()=>zbSet(0);document.body.appendChild(r)}
  const z=document.getElementById("zb");r.classList.toggle("on",!!z);
  if(z&&!z.querySelector(".zx")){const b=document.createElement("button");b.className="zx";b.innerHTML="✕<br>إخفاء";b.title="إخفاء الأزرار الجانبية";b.onclick=()=>zbSet(1);z.appendChild(b)}
- if(z&&!z.querySelector(".zfs")){const f=document.createElement("button");f.className="zfs";f.title="ملء الشاشة";
-  f.innerHTML=sv0('<path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/>')+"ملء الشاشة";
-  f.onclick=()=>{if(document.fullscreenEnabled)fsGo();else fsSheet()};
-  const x=z.querySelector(".zx");x?z.insertBefore(f,x):z.appendChild(f)}
+ if(z)z.querySelectorAll(".zfs").forEach(x=>x.remove());
 }
 document.addEventListener("fullscreenchange",()=>{const f=document.querySelector("#zb .zfs");if(f)f.lastChild.textContent=document.fullscreenElement?"إنهاء":"ملء الشاشة"});
 
@@ -2255,7 +2254,7 @@ function setHideF(v){hideF=!!v;try{localStorage.setItem("hidf",v?"1":"")}catch(e
 if(hideF&&RAW){try{remask();render()}catch(e){}}
 function setCardSize(k,v){
  if(k==="r"){CWn=5;CHn=5}else{v=Math.min(10,Math.max(1,parseInt(v)||5));if(k==="w")CWn=v;else CHn=v}
- CWc=CSL[CWn-1];CHc=CSL[CHn-1];try{localStorage.setItem("cszw",CWn);localStorage.setItem("cszh",CHn)}catch(e){}
+ CWc=CWL[CWn-1];CHc=CHL[CHn-1];try{localStorage.setItem("cszw2",CWn);localStorage.setItem("cszh2",CHn)}catch(e){}
  if(k==="r"){[["csvw","csrw",CWn],["csvh","csrh",CHn]].forEach(([a,b,n])=>{const x=$(a),y=$(b);if(x)x.textContent=n;if(y)y.value=n})}
  csVars();OW1=csW(250);OH1=csH(172);OW2=csW(236);OH2=csH(140);OIND=csW(30);
  try{mcBump()}catch(e){}egoZ=false;egoC=true;render()}
@@ -2732,7 +2731,7 @@ function bfSet(v){document.body.classList.toggle("bf-off",!!v);try{if(v)localSto
    e.classList.add("pk");
   }
  }
- function off(){clearTimeout(t);t=setTimeout(()=>{const e=document.getElementById("scr");e&&e.classList.remove("pk");document.body.classList.remove("pk-on");e&&e.querySelectorAll(".pkc.act").forEach(x=>x.classList.remove("act"))},500)}
+ function off(){clearTimeout(t);t=setTimeout(()=>{const e=document.getElementById("scr");e&&e.classList.remove("pk");document.body.classList.remove("pk-on","pk-hd");e&&e.querySelectorAll(".pkc.act").forEach(x=>x.classList.remove("act"));e&&e.querySelectorAll(".pk-in").forEach(x=>x.classList.remove("pk-in"))},500)}
  document.addEventListener("pointerdown",e=>{if(e.target.closest&&e.target.closest('#scr .pkc input[type=range]'))on()},true);
  document.addEventListener("touchstart",e=>{if(e.target.closest&&e.target.closest('#scr .pkc input[type=range]'))on()},{capture:true,passive:true});
  ["pointerup","pointercancel","touchend","touchcancel","mouseup"].forEach(n=>document.addEventListener(n,()=>{const e=document.getElementById("scr");if(e&&e.classList.contains("pk"))off()},true));
@@ -2973,7 +2972,11 @@ body.zn-off.bf-tree #zns{display:block}
 #fnm{zoom:var(--nmz,.8)}#cn{zoom:var(--rlz,.8)}#bf{zoom:var(--bfz,.8)}
 .nd.exs .ui,.nd.exs .sp2,.nd.exs .sp{display:none!important}
 #scr.pk .sb>.pkc:not(.act){visibility:hidden}
-body.pk-on #hd,body.pk-on #bf,body.pk-on #zb,body.pk-on #zbs,body.pk-on #bfs,body.pk-on #pnd,body.pk-on #zn,body.pk-on #zns,body.pk-on #ldbar{visibility:hidden!important}
+/* أثناء سحب أي شريط: يظهر الشريط نفسه فقط والباقي (عنوان/أرقام/زر/شريط ثاني/خلفية البطاقة) يختفي */
+#scr.pk .sb>.pkc.act{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+#scr.pk .sb>.pkc.act>*:not(.pk-in){visibility:hidden!important}
+#scr.pk .sb>.pkc.act>.pk-in{visibility:visible!important;background:color-mix(in srgb,var(--card) 55%,transparent);border-radius:999px;padding:6px 4px;box-shadow:0 2px 10px #0004}
+body.pk-on:not(.pk-hd) #hd,body.pk-on #bf,body.pk-on #zb,body.pk-on #zbs,body.pk-on #bfs,body.pk-on #pnd,body.pk-on #zn,body.pk-on #zns,body.pk-on #ldbar{visibility:hidden!important}
 </style>
 <script id="v20-js">
 /* ===== تعديلات v20 ===== */
@@ -2983,28 +2986,29 @@ body.pk-on #hd,body.pk-on #bf,body.pk-on #zb,body.pk-on #zbs,body.pk-on #bfs,bod
  const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 
  /* --- (3)(4) أحجام نص الاسم وصلة القرابة: الافتراضي 3 بدل 5 --- */
- window.NZL=lv("nzl",3);window.RZL=lv("rzl",3);window.BZL=3;
+ window.NZL=lv("nzl",2);window.RZL=lv("rzl",2);window.BZL=3;
  const fz=v=>(0.5+0.1*v).toFixed(2);
  function applyTxt(){const s=document.documentElement.style;s.setProperty("--nmz",fz(NZL));s.setProperty("--rlz",fz(RZL));s.setProperty("--bfz",fz(BZL))}
  applyTxt();
- window.txtSet=function(k,v){v=Math.min(10,Math.max(1,parseInt(v)||3));if(k==="n"){NZL=v;sv("nzl",v)}else{RZL=v;sv("rzl",v)}applyTxt()};
+ window.txtSet=function(k,v){v=Math.min(10,Math.max(1,parseInt(v)||2));if(k==="n"){NZL=v;sv("nzl",v)}else{RZL=v;sv("rzl",v)}applyTxt()};
  const sl=(id,lab,key,val)=>`<div class="cd pkc" data-pk="${key}"><h3>${lab}</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="${id}v">${val}</span> من 10</div><input type="range" min="1" max="10" step="1" value="${val}" style="width:100%" oninput="document.getElementById('${id}v').textContent=this.value;txtSet('${key}',this.value)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 صغير</span><span>10 كبير</span></div></div>`;
  window.txtPanels=()=>sl("nz","حجم نص الاسم","n",NZL)+sl("rz","حجم نص صلة القرابة","r",RZL);
- window.textSheet=function(){try{cl()}catch(e){}scr("حجم النص",txtPanels()+'<div class="mu" style="margin:6px 4px">اسحب الشريط ليتغير حجم النص مباشرة.</div>')};
+ window.nameBoxSheet=function(){scr("تخصيص مربع الاسم",txtPanels()+'<div class="mu" style="margin:6px 4px">اسحب الشريط ليتغير مربع الاسم مباشرة.</div>')};
+ window.textSheet=function(){try{cl()}catch(e){}scr("تخصيص مربع الاسم",txtPanels()+'<div class="mu" style="margin:6px 4px">اسحب الشريط ليتغير حجم النص مباشرة.</div>')};
 
  /* --- (2) المسافة بين الأسماء --- */
- window.SPN=lv("spn",5);
+ window.SPN=lv("spn",8);
  function spCalc(){window.SPH=+(0.4+0.12*SPN).toFixed(3);window.SPV=+(0.7+0.06*SPN).toFixed(3)}
  spCalc();
  let spRf=0;
  function spGo(){spRf=0;try{mcBump()}catch(e){}try{egoZ=false;egoC=true}catch(e){}try{render()}catch(e){}}
- window.spSet=function(v,fin){v=Math.min(10,Math.max(1,parseInt(v)||5));SPN=v;sv("spn",v);spCalc();
+ window.spSet=function(v,fin){v=Math.min(10,Math.max(1,parseInt(v)||8));SPN=v;sv("spn",v);spCalc();
   const e=g("spvv"),r=g("spr");if(e)e.textContent=v;if(r&&String(r.value)!==String(v))r.value=v;
   if(fin){cancelAnimationFrame(spRf);spGo();return}if(!spRf)spRf=requestAnimationFrame(spGo)};
- window.spPanel=()=>`<div class="cd pkc" data-pk="s"><h3>المسافة بين الأسماء</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="spvv">${SPN}</span> من 10</div><input id="spr" type="range" min="1" max="10" step="1" value="${SPN}" style="width:100%" oninput="spSet(this.value)" onchange="spSet(this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 قريبة</span><span>10 بعيدة</span></div><button class="btn o" style="margin-top:10px" onclick="spSet(5,1)">رجوع للافتراضي (5)</button></div>`;
+ window.spPanel=()=>`<div class="cd pkc" data-pk="s"><h3>المسافة بين الأسماء</h3><div style="font-weight:700;margin-top:6px">المستوى: <span id="spvv">${SPN}</span> من 10</div><input id="spr" type="range" min="1" max="10" step="1" value="${SPN}" style="width:100%" oninput="spSet(this.value)" onchange="spSet(this.value,1)"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-top:2px"><span>1 قريبة</span><span>10 بعيدة</span></div><button class="btn o" style="margin-top:10px" onclick="spSet(8,1)">رجوع للافتراضي (8)</button></div>`;
 
  /* --- (1) أثناء سحب أي شريط: الشجرة والشريط الذي تسحبه فقط --- */
- const act=ev=>{const r=ev.target&&ev.target.closest&&ev.target.closest("#scr .pkc input[type=range]");if(!r)return;const sc=g("scr");if(!sc)return;sc.querySelectorAll(".pkc.act").forEach(x=>x.classList.remove("act"));r.closest(".pkc").classList.add("act");document.body.classList.add("pk-on")};
+ const act=ev=>{const r=ev.target&&ev.target.closest&&ev.target.closest("#scr .pkc input[type=range]");if(!r)return;const sc=g("scr");if(!sc)return;sc.querySelectorAll(".pkc.act").forEach(x=>x.classList.remove("act"));sc.querySelectorAll(".pk-in").forEach(x=>x.classList.remove("pk-in"));r.classList.add("pk-in");r.closest(".pkc").classList.add("act");const kk=r.closest(".pkc").dataset.pk;document.body.classList.toggle("pk-hd",kk==="n"||kk==="r");document.body.classList.add("pk-on")};
  ["pointerdown","input"].forEach(n=>document.addEventListener(n,act,true));
  document.addEventListener("touchstart",act,{capture:true,passive:true});
 
@@ -3094,5 +3098,43 @@ body.pk-on #hd,body.pk-on #bf,body.pk-on #zb,body.pk-on #zbs,body.pk-on #bfs,bod
 })();
 </script>
 
+<style id="navy-css">:root[data-theme="dark"][data-tone="navy"]{--bg:#0c1a33;--card:#14264a;--tx:#e9effc;--mu:#a0b1d3;--gl:#1b3b63;--ln:#28426e;--cr:#26335a;color-scheme:dark}:root[data-theme="dark"][data-tone="navy"] .nd{background:linear-gradient(120deg,var(--card) 45%,#1f3a78)}:root[data-theme="dark"][data-tone="navy"] .nd.F{background:linear-gradient(120deg,var(--card) 45%,#4a2a55)}</style><script id="pref-sync-js">
+/* حفظ إعدادات المظهر (الخط، البطاقة، المسافة، نص الاسم) باسم المستخدم على السحابة، وترجع تلقائياً عند الدخول بنفس الاسم */
+(function(){
+ let PU=null,PM=null,PL=0,PR=false,PA=false,PT=0;
+ const shp=()=>{try{return localStorage.getItem("shape")||"pill"}catch(e){return"pill"}};
+ const cur=()=>({fl:FL,w:CWn,h:CHn,sp:window.SPN,n:window.NZL,r:window.RZL,sh:shp()});
+ function push(){
+  if(!PR||PA||!DB||!ME)return;
+  clearTimeout(PT);PT=setTimeout(()=>{PL=Date.now();try{Promise.resolve(DB.doc("meta/pref_"+ME).set(cur())).catch(()=>{})}catch(e){}},700)}
+ function apply(v){
+  const n=(x,d)=>{x=parseInt(x);return x>=1&&x<=10?x:d};
+  PA=true;
+  try{
+   const fl=Math.min(9,Math.max(0,(parseInt(v.fl)||0)));
+   if(fl!==FL){FL=fl;applyFL()}
+   if(v.n!=null&&n(v.n,0)&&n(v.n,0)!==window.NZL)window.txtSet("n",n(v.n,2));
+   if(v.r!=null&&n(v.r,0)&&n(v.r,0)!==window.RZL)window.txtSet("r",n(v.r,2));
+   if(v.sp!=null&&n(v.sp,0)&&n(v.sp,0)!==window.SPN)window.spSet(n(v.sp,8),1);
+   if(["none","cloud","leaf","pill"].includes(v.sh)&&v.sh!==shp())setShape(v.sh);
+   if(v.w!=null&&n(v.w,0)&&n(v.w,0)!==CWn)setCardSize("w",n(v.w,5));
+   if(v.h!=null&&n(v.h,0)&&n(v.h,0)!==CHn)setCardSize("h",n(v.h,5));
+  }catch(e){}
+  PA=false}
+ function sync(){
+  if(!DB||!ME||PM===ME)return;
+  PM=ME;PU&&PU();PR=false;let first=true;
+  try{PU=DB.doc("meta/pref_"+ME).onSnapshot(s=>{try{
+   if(Date.now()-PL<2500)return;
+   const v=(s&&typeof s.data==="function"?s.data():s)||{};
+   if(!Object.keys(v).length){if(first){first=false;PR=true;push()}return}
+   first=false;apply(v);PR=true;
+  }catch(e){}},()=>{PR=true})}catch(e){}}
+ const w=(name)=>{const f=window[name];if(typeof f!=="function")return;window[name]=function(){const r=f.apply(this,arguments);push();return r}};
+ ["setCardSize","applyFL","txtSet","spSet","setShape"].forEach(w);
+ try{applyFL=window.applyFL}catch(e){}
+ const r0=render;render=function(){const v=r0.apply(this,arguments);try{sync()}catch(e){}return v};
+})();
+</script>
 </body>
 </html>
